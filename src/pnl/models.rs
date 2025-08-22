@@ -1,19 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum PnlMethod {
+pub enum Method {
     Fifo,
     Position,
 }
 
-impl Default for PnlMethod {
+impl Default for Method {
     fn default() -> Self {
-        PnlMethod::Fifo
+        Method::Fifo
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PnlRecord {
+pub struct Record {
     pub timestamp: i64,
     pub symbol: String,
     pub profit: f64,

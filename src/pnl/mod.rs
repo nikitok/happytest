@@ -5,10 +5,13 @@ pub mod unrealized;
 pub mod calculator;
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    mod unit;
+    mod integration;
+}
 
-pub use models::{PnlMethod, PnlRecord};
-pub use calculator::{PnlReport, PnlProcessor};
-pub use fifo::FifoPnlProcessor;
-pub use position::PositionPnlProcessor;
+pub use models::{Method, Record};
+pub use calculator::{PnlReport, Processor};
+pub use fifo::FifoProcessor;
+pub use position::PositionProcessor;
 pub use unrealized::calculate_unrealized_pnl;

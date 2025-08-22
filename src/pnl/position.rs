@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use crate::core::{Trade, ClosedTrade, PnLResult};
-use crate::pnl::models::{PnlRecord, PositionInfo};
+use crate::pnl::models::{Record, PositionInfo};
 
-/// Position-based PnL processor
-pub struct PositionPnlProcessor;
+/// Position-based processor
+pub struct PositionProcessor;
 
-impl PositionPnlProcessor {
+impl PositionProcessor {
     pub fn new() -> Self {
         Self
     }
@@ -93,7 +93,7 @@ impl PositionPnlProcessor {
                     closed_trades.push(closed_trade);
                     
                     // Add to PnL records
-                    pnl_records.push(PnlRecord {
+                    pnl_records.push(Record {
                         timestamp: time,
                         symbol: symbol.clone(),
                         profit: pnl,
@@ -117,7 +117,7 @@ impl PositionPnlProcessor {
                     closed_trades.push(closed_trade);
                     
                     // Add to PnL records
-                    pnl_records.push(PnlRecord {
+                    pnl_records.push(Record {
                         timestamp: time,
                         symbol: symbol.clone(),
                         profit: pnl,
@@ -193,7 +193,7 @@ impl PositionPnlProcessor {
     }
 }
 
-impl Default for PositionPnlProcessor {
+impl Default for PositionProcessor {
     fn default() -> Self {
         Self::new()
     }

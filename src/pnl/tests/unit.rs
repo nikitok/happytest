@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::core::Trade;
-    use crate::pnl::{PnlReport, PnlMethod};
+    use crate::pnl::{PnlReport, Method};
     use uuid::Uuid;
     
     fn create_test_trade(
@@ -30,7 +30,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 10.0);
         assert_eq!(result.closed_trades.len(), 1);
@@ -44,7 +44,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, -10.0);
         assert_eq!(result.closed_trades.len(), 1);
@@ -59,7 +59,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 10.0); // (110-100) * 1
         assert_eq!(result.closed_trades.len(), 1);
@@ -75,7 +75,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         // First buy: (120-100) * 1 = 20
         // Second buy: (120-110) * 1 = 10
@@ -92,7 +92,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Position);
+        let result = calculator.calculate(&trades, Method::Position);
         
         assert_eq!(result.total_pnl, 10.0);
         assert_eq!(result.closed_trades.len(), 1);
@@ -107,7 +107,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Position);
+        let result = calculator.calculate(&trades, Method::Position);
         
         // Average price: (100 + 110) / 2 = 105
         // PnL: (120 - 105) * 2 = 30
@@ -123,7 +123,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Position);
+        let result = calculator.calculate(&trades, Method::Position);
         
         assert_eq!(result.total_pnl, 10.0); // (100-90) * 1
         assert_eq!(result.closed_trades.len(), 1);
@@ -139,7 +139,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 110.0); // 10 + 100
         assert_eq!(result.closed_trades.len(), 2);
@@ -156,7 +156,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 5.0); // 10 - 5
         assert_eq!(result.closed_trades.len(), 2);
@@ -177,7 +177,7 @@ mod tests {
         ];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 20.0); // 20 - 10 + 10
         // assert_eq!(result.max_drawdown, 10.0); // From 20 to 10
@@ -188,7 +188,7 @@ mod tests {
         let trades = vec![];
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 0.0);
         assert_eq!(result.closed_trades.len(), 0);
@@ -207,7 +207,7 @@ mod tests {
         }
         
         let calculator = PnlReport::new();
-        let result = calculator.calculate(&trades, PnlMethod::Fifo);
+        let result = calculator.calculate(&trades, Method::Fifo);
         
         assert_eq!(result.total_pnl, 0.0);
         assert_eq!(result.closed_trades.len(), 0);

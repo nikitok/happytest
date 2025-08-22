@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use crate::core::{Trade, ClosedTrade, PnLResult};
-use crate::pnl::models::PnlRecord;
+use crate::pnl::models::Record;
 
-/// FIFO (First-In-First-Out) PnL processor
-pub struct FifoPnlProcessor;
+/// FIFO (First-In-First-Out) processor
+pub struct FifoProcessor;
 
-impl FifoPnlProcessor {
+impl FifoProcessor {
     pub fn new() -> Self {
         Self
     }
@@ -85,7 +85,7 @@ impl FifoPnlProcessor {
                 closed_trades.push(closed_trade);
                 
                 // Add to PnL records for visualization
-                pnl_records.push(PnlRecord {
+                pnl_records.push(Record {
                     timestamp: time,
                     symbol: symbol.clone(),
                     profit: pnl,
@@ -158,7 +158,7 @@ impl FifoPnlProcessor {
     }
 }
 
-impl Default for FifoPnlProcessor {
+impl Default for FifoProcessor {
     fn default() -> Self {
         Self::new()
     }
