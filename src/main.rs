@@ -89,13 +89,19 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Calculate PnL
     let pnl_results = dashboard.calculate_pnl(&symbol);
     
-    // Print diagnostic info
+    // Print diagnostic info and PNL results
     if let Some(result) = pnl_results.get(&symbol) {
         println!("\n=== DIAGNOSTIC INFO ===");
         println!("Total trades: {}", dashboard.trade_state.get_all_trades().len());
         println!("Filled trades: {}", dashboard.trade_state.get_trades_history().len());
         println!("Closed positions: {}", result.closed_trades.len());
         println!("======================\n");
+        
+        println!("=== PNL RESULTS ===");
+        println!("Total PNL: ${:.2}", result.total_pnl);
+        println!("Unrealized PNL: ${:.2}", result.unrealized_pnl);
+        println!("Total Fees: ${:.2}", result.total_fees);
+        println!("==================\n");
     }
     
     // Get capital metrics
@@ -111,6 +117,16 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     
     let total_time = main_start.elapsed();
     println!("{}", "=".repeat(60));
+    
+    // Print final PNL summary
+    if let Some(result) = pnl_results.get(&symbol) {
+        println!("FINAL RESULTS:");
+        println!("  Total PNL:       ${:.2}", result.total_pnl);
+        println!("  Unrealized PNL:  ${:.2}", result.unrealized_pnl);
+        println!("  Net PNL:         ${:.2}", result.total_pnl + result.unrealized_pnl);
+        println!("{}", "=".repeat(60));
+    }
+    
     println!("Total execution time: {:.2} seconds", total_time.as_secs_f64());
     log::info!("Total execution time: {:.2} seconds", total_time.as_secs_f64());
     
