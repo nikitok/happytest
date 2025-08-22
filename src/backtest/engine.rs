@@ -40,8 +40,7 @@ impl BacktestEngine {
         // Create strategy based on name
         let mut strategy: Box<dyn Strategy> = match strategy_name {
             "gpt" => {
-                let mut gpt_config = GptMarketMakerConfig::default();
-                gpt_config.fix_order_volume = self.config.fix_order_volume;
+                let gpt_config = GptMarketMakerConfig::default();
                 Box::new(GptMarketMaker::new(symbol.clone(), gpt_config))
             }
             _ => return Err(TradeError::InvalidTradeParameters(

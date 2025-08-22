@@ -1,12 +1,11 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use env_logger;
+use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
-use std::collections::HashMap;
 
 use happytest::{
-    BacktestConfig, BacktestEngine, TradeDashboard,
-    data::extract_symbol_from_filename,
+    data::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
 };
 
 #[derive(Parser, Debug)]
@@ -28,107 +27,114 @@ struct Args {
     #[arg(long, default_value_t = 0.01)]
     rejection_rate: f64,
 
-    /// Minimum spread percentage
-    #[arg(long, default_value_t = 0.0005)]
-    min_spread_pct: f64,
-
     /// Margin requirement rate (0.0-1.0)
     #[arg(long, default_value_t = 0.05)]
     margin_rate: f64,
 
-    /// Fixed order volume for each trade
-    #[arg(long, default_value_t = 0.005)]
-    fix_order_volume: f64,
-
-    /// Spread percentage for market making
-    #[arg(long, default_value_t = 0.005)]
-    spread_percent: f64,
+    /// Strategy selection and configuration
+    #[command(subcommand)]
+    strategy: StrategyCommand,
 }
 
-
+#[derive(Debug, Clone, Subcommand)]
+enum StrategyCommand {
+    /// GPT Market Maker strategy
+    Gpt(happytest::strategy::GptMarketMakerArgs),
+}
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    
+
     let main_start = Instant::now();
     let args = Args::parse();
-    
-    // Create backtest config
+
+    // Create backtest config (only backtest-specific parameters)
     let backtest_config = BacktestConfig {
         fill_rate: args.fill_rate,
         slippage_bps: args.slippage_bps,
         rejection_rate: args.rejection_rate,
         margin_rate: args.margin_rate,
-        fix_order_volume: args.fix_order_volume,
-        min_spread_pct: args.min_spread_pct,
-        spread_percent: args.spread_percent,
+        min_spread_pct: 0.0005, // Default value, could be made a CLI arg if needed
+        spread_percent: 0.005, // Default value, could be made a CLI arg if needed
         max_order_volume: 0.0,
     };
-    
-    // Create backtest engine
-    let engine = BacktestEngine::new(backtest_config.clone());
-    
-    // Run backtest
+
+    // Extract symbol for strategy creation
     let data_file = Path::new(&args.file);
-    let trade_state = engine.run_backtest(data_file, "gpt")?;
-    
-    // Extract symbol for analysis
-    let filename = data_file.file_name()
+    let filename = data_file
+        .file_name()
         .ok_or("Invalid file path")?
         .to_str()
         .ok_or("Invalid filename encoding")?;
     let symbol = extract_symbol_from_filename(filename);
-    
+
+    // Create strategy from command line arguments
+    let strategy = match &args.strategy {
+        StrategyCommand::Gpt(gpt_args) => {
+            gpt_args.build_strategy(symbol.clone())
+        }
+    };
+
+    // Create backtest engine
+    let engine = BacktestEngine::new(backtest_config.clone());
+
+    // Run backtest with the constructed strategy
+    let trade_state = engine.run_backtest_with_custom_strategy(data_file, strategy)?;
+
+    // Symbol already extracted above
+
     // Create dashboard for analysis
     let mut dashboard = TradeDashboard::new(
         trade_state,
         backtest_config.max_order_volume,
         backtest_config.margin_rate,
     );
-    
+
     // Calculate PnL
-    let pnl_results = dashboard.calculate_pnl(&symbol);
-    
+    let pnl_results = dashboard.pnl(&symbol);
+
     // Print diagnostic info and PNL results
     if let Some(result) = pnl_results.get(&symbol) {
         println!("\n=== DIAGNOSTIC INFO ===");
-        println!("Total trades: {}", dashboard.trade_state.get_all_trades().len());
-        println!("Filled trades: {}", dashboard.trade_state.get_trades_history().len());
+        println!(
+            "Total trades: {}",
+            dashboard.trade_state.get_all_trades().len()
+        );
+        println!(
+            "Filled trades: {}",
+            dashboard.trade_state.get_trades_history().len()
+        );
         println!("Closed positions: {}", result.closed_trades.len());
         println!("======================\n");
-        
+
         println!("=== PNL RESULTS ===");
         println!("Total PNL: ${:.2}", result.total_pnl);
         println!("Unrealized PNL: ${:.2}", result.unrealized_pnl);
         println!("Total Fees: ${:.2}", result.total_fees);
         println!("==================\n");
     }
-    
+
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);
     let mut capital_metrics_map = HashMap::new();
     capital_metrics_map.insert(symbol.clone(), capital_metrics);
-    
+
     // Print metrics to console
     let _metrics_summary = dashboard.print_pnl_metrics(&symbol, &pnl_results);
-    
+
     log::info!("============================================================");
     dashboard.to_console(&symbol, &pnl_results, &capital_metrics_map);
-    
+
     let total_time = main_start.elapsed();
     println!("{}", "=".repeat(60));
-    
-    // Print final PNL summary
-    if let Some(result) = pnl_results.get(&symbol) {
-        println!("FINAL RESULTS:");
-        println!("  Total PNL:       ${:.2}", result.total_pnl);
-        println!("  Unrealized PNL:  ${:.2}", result.unrealized_pnl);
-        println!("  Net PNL:         ${:.2}", result.total_pnl + result.unrealized_pnl);
-        println!("{}", "=".repeat(60));
-    }
-    
-    println!("Total execution time: {:.2} seconds", total_time.as_secs_f64());
-    log::info!("Total execution time: {:.2} seconds", total_time.as_secs_f64());
-    
+    println!(
+        "Total execution time: {:.2} seconds",
+        total_time.as_secs_f64()
+    );
+    log::info!(
+        "Total execution time: {:.2} seconds",
+        total_time.as_secs_f64()
+    );
+
     Ok(())
 }

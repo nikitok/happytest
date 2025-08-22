@@ -32,7 +32,7 @@ impl TradeDashboard {
         }
     }
 
-    pub fn calculate_pnl(&mut self, symbol: &str) -> HashMap<String, PnLResult> {
+    pub fn pnl(&mut self, symbol: &str) -> HashMap<String, PnLResult> {
         let mut pnl_results = HashMap::new();
         
         let trades = self.trade_state.get_trades_history();

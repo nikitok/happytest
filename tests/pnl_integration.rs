@@ -116,8 +116,8 @@ fn test_pnl_with_csv_data_position() {
     
     let trades = load_trades_from_csv(path);
     
-    let calculator = PnlReport::new();
-    let result = calculator.calculate(&trades, PnlMethod::Position);
+    let pnl = PnlReport::new();
+    let result = pnl.calculate(&trades, PnlMethod::Position);
     
     println!("Position Method Results:");
     println!("Total P&L: ${:.2}", result.total_pnl);
@@ -125,7 +125,7 @@ fn test_pnl_with_csv_data_position() {
     println!("Total fees: ${:.2}", result.total_fees);
     
     // The results should be similar for both methods if trades are simple
-    let fifo_result = calculator.calculate(&trades, PnlMethod::Fifo);
+    let fifo_result = pnl.calculate(&trades, PnlMethod::Fifo);
     
     // For simple trading patterns, both methods should give similar results
     if result.closed_trades.len() > 0 && fifo_result.closed_trades.len() > 0 {
@@ -140,7 +140,7 @@ fn test_pnl_with_csv_data_position() {
 
 #[test]
 fn test_pnl_by_symbol() {
-    let path = Path::new("../data/test_logs.csv");
+    let path = Path::new("./data/test_logs.csv");
     if !path.exists() {
         eprintln!("Test CSV file not found at {:?}, skipping test", path);
         return;
@@ -158,6 +158,9 @@ fn test_pnl_by_symbol() {
     
     let calculator = PnlReport::new();
     
+    // Store results for verification
+    let mut symbol_results = std::collections::HashMap::new();
+    
     // Calculate P&L for each symbol separately
     for symbol in symbols {
         let symbol_trades: Vec<Trade> = trades.iter()
@@ -167,8 +170,26 @@ fn test_pnl_by_symbol() {
         
         if !symbol_trades.is_empty() {
             let result = calculator.calculate(&symbol_trades, PnlMethod::Fifo);
-            println!("Symbol {}: {} trades, P&L: ${:.2}", 
-                     symbol, symbol_trades.len(), result.total_pnl);
+            println!("Symbol {}: {} trades, P&L: ${:.2}, Unrealised P&L: ${:.3}",
+                     symbol, symbol_trades.len(), result.total_pnl, result.unrealized_pnl);
+            symbol_results.insert(symbol.clone(), (symbol_trades.len(), result.total_pnl));
         }
     }
+    
+    // Verify specific expected values
+    if let Some((trade_count, pnl)) = symbol_results.get("CC") {
+        assert_eq!(*trade_count, 24, "Symbol CC should have 24 trades");
+        assert_eq!(*pnl, -740.0, "Symbol CC P&L should be $-740.00");
+    }
+    
+    if let Some((trade_count, pnl)) = symbol_results.get("AA") {
+        assert_eq!(*trade_count, 30, "Symbol AA should have 30 trades");
+        assert_eq!(*pnl, 5500.0, "Symbol AA P&L should be $5500.00");
+    }
+    
+    if let Some((trade_count, pnl)) = symbol_results.get("BB") {
+        assert_eq!(*trade_count, 28, "Symbol BB should have 28 trades");
+        assert_eq!(*pnl, 3700.0, "Symbol BB P&L should be $3700.00");
+    }
+
 }
