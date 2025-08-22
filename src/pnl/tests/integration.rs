@@ -153,11 +153,20 @@ fn test_pnl_by_symbol() {
     }
 
     
-    let calculator = PnlReport::new();
+    let pnl = PnlReport::new();
     
     // Generate and print the report
-    let report = calculator.report(&trades, Method::Fifo);
+    let report = pnl.report(&trades, Method::Fifo);
     println!("{}", report);
+    
+    // Generate P&L graphs with default parameters
+    match pnl.graph(&trades, Method::Fifo, None, None) {
+        Ok(_) => println!("\nP&L graphs generated successfully in ./data/"),
+        Err(e) => eprintln!("Failed to generate graphs: {}", e),
+    }
+    
+    // Example: Generate graphs with custom parameters
+    // pnl.graph(&trades, Method::Fifo, Some("./output"), Some("profit_loss_"))?;
     
     // Store results for verification
     let mut symbol_results = std::collections::HashMap::new();
@@ -170,7 +179,7 @@ fn test_pnl_by_symbol() {
             .collect();
         
         if !symbol_trades.is_empty() {
-            let result = calculator.calculate(&symbol_trades, Method::Fifo);
+            let result = pnl.calculate(&symbol_trades, Method::Fifo);
             symbol_results.insert(symbol.clone(), (symbol_trades.len(), result.total_pnl, result.unrealized_pnl, result.remaining_shares));
         }
     }
