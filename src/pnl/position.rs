@@ -155,12 +155,33 @@ impl PositionPnlProcessor {
         // Calculate total realized PnL
         let total_pnl = closed_trades.iter().map(|t| t.pnl).sum();
         
+        // Calculate remaining shares and unrealized P&L
+        let mut remaining_shares = 0.0;
+        let mut unrealized_pnl = 0.0;
+        
+        // Get the last price from trades for unrealized P&L calculation
+        let last_price = trades.last().map(|t| t.price).unwrap_or(0.0);
+        
+        for (_, pos) in &positions {
+            if pos.quantity != 0.0 {
+                remaining_shares += pos.quantity; // Positive for long, negative for short
+                if pos.quantity > 0.0 {
+                    // Long position
+                    unrealized_pnl += (last_price - pos.avg_price) * pos.quantity;
+                } else {
+                    // Short position
+                    unrealized_pnl += (pos.avg_price - last_price) * pos.quantity.abs();
+                }
+            }
+        }
+        
         // Create and return PnLResult object
         PnLResult {
             total_pnl,
-            unrealized_pnl: 0.0,
+            unrealized_pnl,
             closed_trades,
             total_fees: 0.0,
+            remaining_shares,
         }
     }
     

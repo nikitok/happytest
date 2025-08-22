@@ -12,12 +12,11 @@ pub struct TradeDashboard {
     timestamp_history: Vec<i64>,
     margin_history: Vec<f64>,
     open_positions_value_history: Vec<f64>,
-    max_order_volume: f64,
     margin_rate: f64,
 }
 
 impl TradeDashboard {
-    pub fn new(trade_state: TradeState, max_order_volume: f64, margin_rate: f64) -> Self {
+    pub fn new(trade_state: TradeState, margin_rate: f64) -> Self {
         Self {
             trade_state,
             positions: HashMap::new(),
@@ -27,7 +26,6 @@ impl TradeDashboard {
             timestamp_history: Vec::new(),
             margin_history: Vec::new(),
             open_positions_value_history: Vec::new(),
-            max_order_volume,
             margin_rate,
         }
     }
@@ -94,14 +92,16 @@ impl TradeDashboard {
             }
         }
         
-        // Calculate unrealized PnL
+        // Calculate unrealized PnL and remaining shares
         let mut unrealized_pnl = 0.0;
+        let mut remaining_shares = 0.0;
         let last_price = trades.last().map(|t| t.price).unwrap_or(0.0);
         
         for (_, pos_list) in &positions {
             for (quantity, price) in pos_list {
                 if *quantity > 0.0 {
                     unrealized_pnl += (last_price - price) * quantity;
+                    remaining_shares += quantity;
                 }
             }
         }
@@ -111,6 +111,7 @@ impl TradeDashboard {
             unrealized_pnl,
             closed_trades,
             total_fees: 0.0,
+            remaining_shares,
         }
     }
 

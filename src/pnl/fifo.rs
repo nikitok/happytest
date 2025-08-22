@@ -122,12 +122,38 @@ impl FifoPnlProcessor {
         // Remove empty entries from open_trades
         open_trades.retain(|_, trades| !trades.is_empty());
         
+        // Calculate remaining shares and unrealized P&L
+        let mut remaining_shares = 0.0;
+        let mut unrealized_pnl = 0.0;
+        
+        // Get the last price per symbol for unrealized P&L calculation
+        let mut last_prices: HashMap<String, f64> = HashMap::new();
+        for trade in trades.iter().rev() {
+            if !last_prices.contains_key(&trade.symbol) {
+                last_prices.insert(trade.symbol.clone(), trade.price);
+            }
+        }
+        
+        for (symbol, asset_trades) in &open_trades {
+            let last_price = last_prices.get(symbol).copied().unwrap_or(0.0);
+            for trade in asset_trades {
+                if trade.side.to_lowercase() == "buy" {
+                    remaining_shares += trade.quantity;
+                    unrealized_pnl += (last_price - trade.price) * trade.quantity;
+                } else {
+                    remaining_shares -= trade.quantity;
+                    unrealized_pnl += (trade.price - last_price) * trade.quantity;
+                }
+            }
+        }
+        
         // Create and return PnLResult object
         PnLResult {
             total_pnl,
-            unrealized_pnl: 0.0,
+            unrealized_pnl,
             closed_trades,
             total_fees: 0.0,
+            remaining_shares,
         }
     }
 }

@@ -45,6 +45,7 @@ impl PnlReport {
                 unrealized_pnl: 0.0,
                 closed_trades: Vec::new(),
                 total_fees: 0.0,
+                remaining_shares: 0.0,
             };
         }
         

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::core::{Trade, TradeError, Result};
+use crate::core::{TradeError, Result};
 
 #[derive(Debug, Clone)]
 pub struct Position {

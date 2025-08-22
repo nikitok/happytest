@@ -109,6 +109,7 @@ pub struct PnLResult {
     pub unrealized_pnl: f64,
     pub closed_trades: Vec<ClosedTrade>,
     pub total_fees: f64,
+    pub remaining_shares: f64,
 }
 
 #[derive(Debug, Clone)]

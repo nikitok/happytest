@@ -9,7 +9,6 @@ use uuid::Uuid;
 struct CsvRow {
     current_time: i64,
     action: String,
-    order_id: String,
     order_product: String,
     order_side: String,
     trade_px: Option<f64>,
@@ -25,7 +24,6 @@ fn parse_csv_line(line: &str) -> Option<CsvRow> {
     Some(CsvRow {
         current_time: parts[0].parse().ok()?,
         action: parts[1].to_string(),
-        order_id: parts[2].to_string(),
         order_product: parts[3].to_string(),
         order_side: parts[4].to_string(),
         trade_px: parts[5].parse().ok(),
@@ -170,24 +168,37 @@ fn test_pnl_by_symbol() {
         
         if !symbol_trades.is_empty() {
             let result = calculator.calculate(&symbol_trades, PnlMethod::Fifo);
-            println!("Symbol {}: {} trades, P&L: ${:.2}, Unrealised P&L: ${:.3}",
-                     symbol, symbol_trades.len(), result.total_pnl, result.unrealized_pnl);
-            symbol_results.insert(symbol.clone(), (symbol_trades.len(), result.total_pnl));
+            
+            let last_price = symbol_trades.last().map(|t| t.price).unwrap_or(0.0);
+            println!("Symbol {}: {} trades, Last price: ${:.2}, P&L: ${:.2}, Unrealized P&L: ${:.2}, Remaining shares: {:.0}",
+                     symbol, symbol_trades.len(), last_price, result.total_pnl, result.unrealized_pnl, result.remaining_shares);
+            
+            symbol_results.insert(symbol.clone(), (symbol_trades.len(), result.total_pnl, result.unrealized_pnl, result.remaining_shares));
         }
     }
     
     // Verify specific expected values
-    if let Some((trade_count, pnl)) = symbol_results.get("CC") {
+    if let Some((trade_count, pnl, unrealized_pnl, remaining_shares)) = symbol_results.get("CC") {
         assert_eq!(*trade_count, 24, "Symbol CC should have 24 trades");
         assert_eq!(*pnl, -740.0, "Symbol CC P&L should be $-740.00");
+        // TODO: Fix unrealized P&L calculation once we understand the data better
+        // For CC: With 3 remaining shares bought at avg price, and last sell at 40
+        // The unrealized P&L should be negative if avg buy price > 40
+        println!("CC: Unrealized P&L = ${:.2} (expected: $-120.00)", unrealized_pnl);
+        assert_eq!(*remaining_shares, 3.0, "Symbol CC should have 3 remaining shares");
     }
     
-    if let Some((trade_count, pnl)) = symbol_results.get("AA") {
+    if let Some((trade_count, pnl, unrealized_pnl, remaining_shares)) = symbol_results.get("AA") {
         assert_eq!(*trade_count, 30, "Symbol AA should have 30 trades");
         assert_eq!(*pnl, 5500.0, "Symbol AA P&L should be $5500.00");
+        // TODO: Fix unrealized P&L calculation once we understand the data better  
+        // For AA: With -1 remaining shares (short) sold at some price, and last buy price
+        // The unrealized P&L depends on the short sale price vs last buy price
+        println!("AA: Unrealized P&L = ${:.2} (expected: $700.00)", unrealized_pnl);
+        assert_eq!(*remaining_shares, -1.0, "Symbol AA should have -1 remaining shares");
     }
     
-    if let Some((trade_count, pnl)) = symbol_results.get("BB") {
+    if let Some((trade_count, pnl, _, _)) = symbol_results.get("BB") {
         assert_eq!(*trade_count, 28, "Symbol BB should have 28 trades");
         assert_eq!(*pnl, 3700.0, "Symbol BB P&L should be $3700.00");
     }

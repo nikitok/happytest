@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use crate::core::{Trade, ClosedTrade};
+use crate::core::ClosedTrade;
 
 #[derive(Debug, Clone)]
 pub struct TradingMetrics {

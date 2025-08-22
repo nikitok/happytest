@@ -86,7 +86,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create dashboard for analysis
     let mut dashboard = TradeDashboard::new(
         trade_state,
-        backtest_config.max_order_volume,
         backtest_config.margin_rate,
     );
 
