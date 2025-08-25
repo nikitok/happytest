@@ -2,13 +2,14 @@ use anyhow::{Context, Result};
 use chrono::Local;
 use log::{debug, error, info, warn};
 use reqwest;
-use serde::{Deserialize, Serialize};
-use serde_json;
-use std::fs::{create_dir_all, File, OpenOptions};
-use std::io::{BufWriter, Write};
+use std::fs::create_dir_all;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::sleep;
+
+// Import models and storage
+use super::models::{BybitResponse, OrderbookData};
+use super::storage::{StorageWriter, WriterConfig, JsonlWriter, ParquetWriter};
 
 /// Configuration for the Bybit reader
 #[derive(Debug, Clone)]
@@ -25,6 +26,8 @@ pub struct ReaderConfig {
     pub depth: u32,
     /// Duration to run in seconds (0 for infinite)
     pub duration_seconds: u64,
+    /// Save as Parquet in addition to JSONL
+    pub save_parquet: bool,
 }
 
 impl Default for ReaderConfig {
@@ -36,47 +39,16 @@ impl Default for ReaderConfig {
             testnet: false,
             depth: 50,
             duration_seconds: 3600, // 1 hour by default
+            save_parquet: true,     // Enable Parquet by default
         }
     }
-}
-
-/// Bybit orderbook response structure
-#[derive(Debug, Deserialize)]
-struct BybitResponse {
-    #[serde(rename = "retCode")]
-    ret_code: i32,
-    #[serde(rename = "retMsg")]
-    ret_msg: String,
-    result: OrderbookResult,
-    #[allow(dead_code)]
-    time: i64,
-}
-
-#[derive(Debug, Deserialize)]
-struct OrderbookResult {
-    s: String,           // symbol
-    b: Vec<[String; 2]>, // bids [price, size]
-    a: Vec<[String; 2]>, // asks [price, size]
-    ts: i64,             // timestamp
-    u: i64,              // update id
-}
-
-/// Orderbook data structure to save
-#[derive(Debug, Serialize)]
-struct OrderbookData {
-    symbol: String,
-    bids: Vec<[String; 2]>,
-    asks: Vec<[String; 2]>,
-    timestamp: i64,
-    update_id: i64,
-    fetch_time: i64,
 }
 
 /// Bybit data reader
 pub struct BybitReader {
     config: ReaderConfig,
     client: reqwest::Client,
-    writer: Arc<Mutex<Option<BufWriter<File>>>>,
+    writers: Arc<Mutex<Vec<Box<dyn StorageWriter>>>>,
     start_time: SystemTime,
 }
 
@@ -95,7 +67,7 @@ impl BybitReader {
         Ok(Self {
             config,
             client,
-            writer: Arc::new(Mutex::new(None)),
+            writers: Arc::new(Mutex::new(Vec::new())),
             start_time: SystemTime::now(),
         })
     }
@@ -109,8 +81,8 @@ impl BybitReader {
         }
     }
 
-    /// Initialize the output file
-    fn init_output_file(&self) -> Result<BufWriter<File>> {
+    /// Generate base filename for output files
+    fn generate_base_filename(&self) -> String {
         let now = Local::now();
         let date_str = now.format("%Y%m%d_%H%M%S").to_string();
         let duration_str = if self.config.duration_seconds > 0 {
@@ -119,8 +91,8 @@ impl BybitReader {
             "continuous".to_string()
         };
 
-        let filename = format!(
-            "{}/{}_{}_{}_{}.jsonl",
+        format!(
+            "{}/{}_{}_{}_{}",
             self.config.output_dir,
             self.config.symbol,
             date_str,
@@ -130,18 +102,32 @@ impl BybitReader {
             } else {
                 "mainnet"
             }
-        );
+        )
+    }
 
-        info!("Creating output file: {}", filename);
+    /// Initialize storage writers
+    fn init_writers(&self) -> Result<Vec<Box<dyn StorageWriter>>> {
+        let base_filename = self.generate_base_filename();
+        let writer_config = WriterConfig {
+            base_filename: base_filename.clone(),
+            buffer_size: 100,
+        };
 
-        let file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .append(true)
-            .open(&filename)
-            .context("Failed to create output file")?;
+        let mut writers: Vec<Box<dyn StorageWriter>> = Vec::new();
 
-        Ok(BufWriter::new(file))
+        // Always add JSONL writer
+        let mut jsonl_writer = Box::new(JsonlWriter::new());
+        jsonl_writer.init(writer_config.clone())?;
+        writers.push(jsonl_writer);
+
+        // Add Parquet writer if enabled
+        if self.config.save_parquet {
+            let mut parquet_writer = Box::new(ParquetWriter::new());
+            parquet_writer.init(writer_config)?;
+            writers.push(parquet_writer);
+        }
+
+        Ok(writers)
     }
 
     /// Fetch orderbook data from Bybit API
@@ -192,23 +178,40 @@ impl BybitReader {
         })
     }
 
-    /// Write orderbook data to file
+    /// Write data to all storage writers
     fn write_data(&self, data: &OrderbookData) -> Result<()> {
-        let mut writer_guard = self.writer.lock().unwrap();
+        let mut writers_guard = self.writers.lock().unwrap();
 
-        if let Some(writer) = writer_guard.as_mut() {
-            let json_line =
-                serde_json::to_string(data).context("Failed to serialize orderbook data")?;
+        for writer in writers_guard.iter_mut() {
+            if let Err(e) = writer.write(data) {
+                error!("Failed to write data to {}: {}", writer.file_extension(), e);
+            }
+        }
 
-            writeln!(writer, "{}", json_line).context("Failed to write to file")?;
+        // Flush writers periodically
+        for writer in writers_guard.iter_mut() {
+            if let Err(e) = writer.flush() {
+                error!("Failed to flush {}: {}", writer.file_extension(), e);
+            }
+        }
 
-            writer.flush().context("Failed to flush writer")?;
+        debug!(
+            "Wrote orderbook data: {} bids, {} asks",
+            data.bids.len(),
+            data.asks.len()
+        );
 
-            debug!(
-                "Wrote orderbook data: {} bids, {} asks",
-                data.bids.len(),
-                data.asks.len()
-            );
+        Ok(())
+    }
+
+    /// Close all storage writers
+    fn close_writers(&self) -> Result<()> {
+        let mut writers_guard = self.writers.lock().unwrap();
+
+        for writer in writers_guard.iter_mut() {
+            if let Err(e) = writer.close() {
+                error!("Failed to close {}: {}", writer.file_extension(), e);
+            }
         }
 
         Ok(())
@@ -226,11 +229,12 @@ impl BybitReader {
                 "infinite".to_string()
             }
         );
+        info!("Parquet output: {}", if self.config.save_parquet { "enabled" } else { "disabled" });
 
-        // Initialize output file
+        // Initialize storage writers
         {
-            let mut writer_guard = self.writer.lock().unwrap();
-            *writer_guard = Some(self.init_output_file()?);
+            let mut writers_guard = self.writers.lock().unwrap();
+            *writers_guard = self.init_writers()?;
         }
 
         let mut fetch_count = 0u64;
@@ -251,7 +255,7 @@ impl BybitReader {
                 Ok(data) => {
                     fetch_count += 1;
 
-                    // Write to file
+                    // Write to storage
                     if let Err(e) = self.write_data(&data) {
                         error!("Failed to write data: {}", e);
                         error_count += 1;
@@ -280,6 +284,11 @@ impl BybitReader {
             sleep(Duration::from_secs(self.config.interval_seconds)).await;
         }
 
+        // Close all writers
+        if let Err(e) = self.close_writers() {
+            error!("Failed to close writers: {}", e);
+        }
+
         info!(
             "Reader finished. Total fetches: {}, errors: {}",
             fetch_count, error_count
@@ -302,59 +311,7 @@ mod tests {
         assert!(!config.testnet);
         assert_eq!(config.depth, 50);
         assert_eq!(config.duration_seconds, 3600);
+        assert!(config.save_parquet);
     }
 }
 
-/// Main function to run the reader with default parameters
-/// 
-/// This allows running the reader directly as:
-/// ```bash
-/// cd src/reader && cargo run --bin bybit_reader
-/// ```
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize logger
-    env_logger::init();
-
-    // Use default configuration
-    let config = ReaderConfig {
-        duration_seconds: 60,
-        ..ReaderConfig::default()
-    };
-
-    fn print_reader_config(config: &ReaderConfig) {
-        println!("=== Bybit Orderbook Reader (Config) ===");
-        println!("Symbol: {}", config.symbol);
-        println!("Interval: {} second{}", config.interval_seconds, if config.interval_seconds == 1 { "" } else { "s" });
-        println!("Duration: {} seconds", config.duration_seconds);
-        println!("Output: {}", config.output_dir);
-        println!("Network: {}", if config.testnet { "testnet" } else { "mainnet" });
-        println!("Depth: {}", config.depth);
-        println!("==============================================\n");
-    }
-
-    print_reader_config(&config);
-
-
-    // Create and run reader
-    let reader = BybitReader::new(config)?;
-    
-    // Handle Ctrl+C gracefully
-    let reader_handle = tokio::spawn(async move {
-        if let Err(e) = reader.run().await {
-            eprintln!("Reader error: {}", e);
-        }
-    });
-    
-    // Wait for the reader to complete or Ctrl+C
-    tokio::select! {
-        _ = reader_handle => {
-            println!("\nReader completed");
-        }
-        _ = tokio::signal::ctrl_c() => {
-            println!("\nReceived interrupt signal, shutting down...");
-        }
-    }
-    
-    Ok(())
-}

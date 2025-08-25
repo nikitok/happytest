@@ -1,21 +1,12 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 use std::path::Path;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json;
 use anyhow::{Result, Context};
 
-/// Orderbook data from reader
-#[derive(Debug, Deserialize)]
-struct ReaderOrderbookData {
-    symbol: String,
-    bids: Vec<[String; 2]>,
-    asks: Vec<[String; 2]>,
-    timestamp: i64,
-    update_id: i64,
-    #[allow(dead_code)]
-    fetch_time: i64,
-}
+// Use OrderbookData from models
+use super::models::OrderbookData;
 
 /// Orderbook data format for backtest
 #[derive(Debug, Serialize)]
@@ -52,7 +43,7 @@ pub fn convert_reader_to_backtest(input_path: &Path, output_path: &Path) -> Resu
         
         match line {
             Ok(json_line) => {
-                match serde_json::from_str::<ReaderOrderbookData>(&json_line) {
+                match serde_json::from_str::<OrderbookData>(&json_line) {
                     Ok(reader_data) => {
                         // Convert to backtest format
                         let backtest_data = BacktestOrderbookData {
