@@ -115,7 +115,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("{}", report);
     
     // Optionally generate P&L graphs
-    pnl_report.graph_default(all_trades, Method::Fifo)?;
+    pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some("test_graph"))?;
 
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);

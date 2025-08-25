@@ -146,7 +146,7 @@ impl PnlReport {
         format!("\n=== P&L Summary by Symbol ===\n{}", table)
     }
     
-    /// Generate P&L graphs for each symbol
+    /// Generate P&L graphs for each symbol (without aggregation)
     /// 
     /// # Arguments
     /// * `trades` - List of trades to analyze
@@ -383,6 +383,289 @@ impl PnlReport {
         }
         
         Ok(())
+    }
+    
+    /// Generate P&L graphs with time-based aggregation
+    /// 
+    /// # Arguments
+    /// * `trades` - List of trades to analyze
+    /// * `method` - Calculation method (Fifo or Position)
+    /// * `output_dir` - Output directory for charts (default: "./data")
+    /// * `prefix` - Filename prefix (default: "pnl_")
+    /// * `aggregation_ms` - Aggregation interval in milliseconds (e.g., 1000 for 1 second, 60000 for 1 minute)
+    pub fn graph_with_aggregation(
+        &self, 
+        trades: &[Trade], 
+        method: Method,
+        output_dir: Option<&str>,
+        prefix: Option<&str>,
+        aggregation_ms: i64,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let output_dir = output_dir.unwrap_or("./data");
+        let prefix = prefix.unwrap_or("pnl_");
+        
+        // Create output directory if it doesn't exist
+        std::fs::create_dir_all(output_dir)?;
+        
+        // Group trades by symbol
+        let mut trades_by_symbol: HashMap<String, Vec<Trade>> = HashMap::new();
+        
+        for trade in trades {
+            trades_by_symbol
+                .entry(trade.symbol.clone())
+                .or_default()
+                .push(trade.clone());
+        }
+        
+        // Store data for combined chart
+        let mut all_symbol_data: Vec<(String, Vec<(i64, f64)>)> = Vec::new();
+        
+        // Process each symbol
+        for (symbol, mut symbol_trades) in trades_by_symbol {
+            // Sort trades by time
+            symbol_trades.sort_by_key(|t| t.time);
+            
+            // Aggregate trades by time buckets
+            let mut aggregated_data: Vec<(i64, Vec<Trade>)> = Vec::new();
+            
+            for trade in symbol_trades.iter() {
+                let bucket_time = (trade.time / aggregation_ms) * aggregation_ms;
+                
+                if let Some(last) = aggregated_data.last_mut() {
+                    if last.0 == bucket_time {
+                        last.1.push(trade.clone());
+                    } else {
+                        aggregated_data.push((bucket_time, vec![trade.clone()]));
+                    }
+                } else {
+                    aggregated_data.push((bucket_time, vec![trade.clone()]));
+                }
+            }
+            
+            // Calculate cumulative P&L for each time bucket
+            let mut cumulative_pnl = Vec::new();
+            let mut timestamps = Vec::new();
+            let mut all_trades_so_far = Vec::new();
+            
+            for (bucket_time, bucket_trades) in aggregated_data {
+                // Add trades from this bucket to all trades
+                all_trades_so_far.extend(bucket_trades);
+                
+                // Calculate P&L up to this point
+                let result = self.calculate(&all_trades_so_far, method);
+                let current_pnl = result.total_pnl + result.unrealized_pnl;
+                
+                cumulative_pnl.push(current_pnl);
+                timestamps.push(bucket_time);
+            }
+            
+            // Create the chart
+            let filename = format!("{}/{}{}.png", output_dir, prefix, symbol);
+            let root = BitMapBackend::new(&filename, (1024, 768)).into_drawing_area();
+            root.fill(&WHITE)?;
+            
+            // Find min and max values for the chart
+            let min_pnl = cumulative_pnl.iter().cloned().fold(f64::INFINITY, f64::min);
+            let max_pnl = cumulative_pnl.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+            let pnl_range = if (max_pnl - min_pnl).abs() < 1.0 {
+                min_pnl - 100.0..max_pnl + 100.0
+            } else {
+                min_pnl * 1.1..max_pnl * 1.1
+            };
+            
+            let min_time = *timestamps.first().unwrap_or(&0);
+            let max_time = *timestamps.last().unwrap_or(&1);
+            
+            let mut chart = ChartBuilder::on(&root)
+                .caption(&format!("P&L Chart for {} ({}ms aggregation)", symbol, aggregation_ms), ("sans-serif", 40).into_font())
+                .margin(10)
+                .x_label_area_size(40)
+                .y_label_area_size(60)
+                .build_cartesian_2d(min_time..max_time, pnl_range)?;
+            
+            chart.configure_mesh()
+                .x_desc("Time")
+                .y_desc("P&L ($)")
+                .x_label_formatter(&|x| {
+                    chrono::DateTime::from_timestamp_millis(*x)
+                        .map(|dt| dt.format("%H:%M").to_string())
+                        .unwrap_or_else(|| x.to_string())
+                })
+                .draw()?;
+            
+            // Draw the P&L line
+            let data: Vec<(i64, f64)> = timestamps.into_iter()
+                .zip(cumulative_pnl.iter().cloned())
+                .collect();
+                
+            chart.draw_series(LineSeries::new(
+                data.clone(),
+                &BLUE,
+            ))?
+            .label("Cumulative P&L")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], &BLUE));
+            
+            // Add a zero line
+            chart.draw_series(LineSeries::new(
+                vec![(min_time, 0.0), (max_time, 0.0)],
+                &BLACK.mix(0.3),
+            ))?;
+            
+            // Draw points for each trade
+            chart.draw_series(PointSeries::of_element(
+                data.clone(),
+                3,
+                &BLUE,
+                &|c, s, st| {
+                    return EmptyElement::at(c)
+                        + Circle::new((0, 0), s, st.filled());
+                },
+            ))?;
+            
+            // Add final P&L annotation
+            if let Some((last_time, last_pnl)) = data.last() {
+                let color = if *last_pnl >= 0.0 { &GREEN } else { &RED };
+                chart.draw_series(PointSeries::of_element(
+                    vec![(*last_time, *last_pnl)],
+                    5,
+                    color,
+                    &|c, s, st| {
+                        return EmptyElement::at(c)
+                            + Circle::new((0, 0), s, st.filled())
+                            + Text::new(format!("${:.2}", last_pnl), (10, 0), ("sans-serif", 15).into_font());
+                    },
+                ))?;
+            }
+            
+            chart.configure_series_labels()
+                .background_style(&WHITE.mix(0.8))
+                .border_style(&BLACK)
+                .draw()?;
+                
+            root.present()?;
+            println!("Generated P&L chart: {}", filename);
+            
+            // Store data for combined chart
+            all_symbol_data.push((symbol.clone(), data));
+        }
+        
+        // Generate combined chart with all symbols
+        if !all_symbol_data.is_empty() {
+            let combined_filename = format!("{}/{}combined.png", output_dir, prefix);
+            let root = BitMapBackend::new(&combined_filename, (1200, 800)).into_drawing_area();
+            root.fill(&WHITE)?;
+            
+            // Find global min/max values for all symbols
+            let mut global_min_time = i64::MAX;
+            let mut global_max_time = i64::MIN;
+            let mut global_min_pnl = f64::INFINITY;
+            let mut global_max_pnl = f64::NEG_INFINITY;
+            
+            for (_, data) in &all_symbol_data {
+                for (time, pnl) in data {
+                    global_min_time = global_min_time.min(*time);
+                    global_max_time = global_max_time.max(*time);
+                    global_min_pnl = global_min_pnl.min(*pnl);
+                    global_max_pnl = global_max_pnl.max(*pnl);
+                }
+            }
+            
+            let pnl_range = if (global_max_pnl - global_min_pnl).abs() < 1.0 {
+                global_min_pnl - 100.0..global_max_pnl + 100.0
+            } else {
+                global_min_pnl * 1.1..global_max_pnl * 1.1
+            };
+            
+            let mut chart = ChartBuilder::on(&root)
+                .caption(&format!("Combined P&L Chart - All Symbols ({}ms aggregation)", aggregation_ms), ("sans-serif", 45).into_font())
+                .margin(15)
+                .x_label_area_size(40)
+                .y_label_area_size(70)
+                .build_cartesian_2d(global_min_time..global_max_time, pnl_range)?;
+            
+            chart.configure_mesh()
+                .x_desc("Time")
+                .y_desc("P&L ($)")
+                .x_label_formatter(&|x| {
+                    chrono::DateTime::from_timestamp_millis(*x)
+                        .map(|dt| dt.format("%H:%M").to_string())
+                        .unwrap_or_else(|| x.to_string())
+                })
+                .draw()?;
+            
+            // Define colors for different symbols
+            let colors = [&BLUE, &RED, &GREEN, &MAGENTA, &CYAN, &BLACK];
+            
+            // Draw zero line
+            chart.draw_series(LineSeries::new(
+                vec![(global_min_time, 0.0), (global_max_time, 0.0)],
+                &BLACK.mix(0.2),
+            ))?;
+            
+            // Draw each symbol's P&L line
+            for (idx, (symbol, data)) in all_symbol_data.iter().enumerate() {
+                let color = colors[idx % colors.len()];
+                
+                chart.draw_series(LineSeries::new(
+                    data.clone(),
+                    color,
+                ))?
+                .label(symbol)
+                .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 10, y)], color));
+                
+                // Add final value annotation
+                if let Some((last_time, last_pnl)) = data.last() {
+                    let label_color = if *last_pnl >= 0.0 { &GREEN } else { &RED };
+                    chart.draw_series(PointSeries::of_element(
+                        vec![(*last_time, *last_pnl)],
+                        5,
+                        color,
+                        &|c, s, st| {
+                            return EmptyElement::at(c)
+                                + Circle::new((0, 0), s, st.filled())
+                                + Text::new(
+                                    format!("{}: ${:.2}", symbol, last_pnl), 
+                                    (10, -5 - (idx as i32 * 15)), 
+                                    ("sans-serif", 12).into_font().color(label_color)
+                                );
+                        },
+                    ))?;
+                }
+            }
+            
+            // Draw legend
+            chart.configure_series_labels()
+                .background_style(&WHITE.mix(0.8))
+                .border_style(&BLACK)
+                .draw()?;
+                
+            root.present()?;
+            println!("Generated combined P&L chart: {}", combined_filename);
+        }
+        
+        Ok(())
+    }
+    
+    /// Generate P&L graphs with second-level aggregation
+    pub fn graph_by_second(
+        &self, 
+        trades: &[Trade], 
+        method: Method,
+        output_dir: Option<&str>,
+        prefix: Option<&str>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.graph_with_aggregation(trades, method, output_dir, prefix, 1000)
+    }
+    
+    /// Generate P&L graphs with minute-level aggregation
+    pub fn graph_by_minute(
+        &self, 
+        trades: &[Trade], 
+        method: Method,
+        output_dir: Option<&str>,
+        prefix: Option<&str>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.graph_with_aggregation(trades, method, output_dir, prefix, 60000)
     }
     
     /// Generate P&L graphs with default parameters (./data directory, pnl_ prefix)
