@@ -84,7 +84,6 @@ impl PnlReport {
         table.set_header(vec![
             "Symbol",
             "Trades",
-            "Last Price",
             "Realized P&L",
             "Unrealized P&L",
             "Remaining Shares",
@@ -104,13 +103,11 @@ impl PnlReport {
         for symbol in symbols {
             if let Some(symbol_trades) = trades_by_symbol.get(&symbol) {
                 let result = self.calculate(symbol_trades, method);
-                let last_price = symbol_trades.last().map(|t| t.price).unwrap_or(0.0);
                 let total_pnl = result.total_pnl + result.unrealized_pnl;
                 
                 table.add_row(vec![
                     symbol.clone(),
                     symbol_trades.len().to_string(),
-                    format!("${:.2}", last_price),
                     format!("${:.2}", result.total_pnl),
                     format!("${:.2}", result.unrealized_pnl),
                     format!("{:.0}", result.remaining_shares),
@@ -134,14 +131,12 @@ impl PnlReport {
             "─────────────".to_string(),
             "─────────────".to_string(),
             "─────────────".to_string(),
-            "─────────────".to_string(),
         ]);
         
         // Add totals row
         table.add_row(vec![
             "TOTAL".to_string(),
             total_trades.to_string(),
-            "-".to_string(),
             format!("${:.2}", total_realized),
             format!("${:.2}", total_unrealized),
             format!("{:.0}", total_remaining),

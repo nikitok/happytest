@@ -6,6 +6,7 @@ use std::time::Instant;
 
 use happytest::{
     data::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
+    pnl::{PnlReport, Method},
 };
 
 #[derive(Parser, Debug)]
@@ -92,26 +93,29 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Calculate PnL
     let pnl_results = dashboard.pnl(&symbol);
 
-    // Print diagnostic info and PNL results
+    // Print diagnostic info
+    println!("\n=== DIAGNOSTIC INFO ===");
+    println!(
+        "Total trades: {}",
+        dashboard.trade_state.get_all_trades().len()
+    );
+    println!(
+        "Filled trades: {}",
+        dashboard.trade_state.get_trades_history().len()
+    );
     if let Some(result) = pnl_results.get(&symbol) {
-        println!("\n=== DIAGNOSTIC INFO ===");
-        println!(
-            "Total trades: {}",
-            dashboard.trade_state.get_all_trades().len()
-        );
-        println!(
-            "Filled trades: {}",
-            dashboard.trade_state.get_trades_history().len()
-        );
         println!("Closed positions: {}", result.closed_trades.len());
-        println!("======================\n");
-
-        println!("=== PNL RESULTS ===");
-        println!("Total PNL: ${:.2}", result.total_pnl);
-        println!("Unrealized PNL: ${:.2}", result.unrealized_pnl);
-        println!("Total Fees: ${:.2}", result.total_fees);
-        println!("==================\n");
     }
+    println!("======================");
+
+    // Use PnlReport to display results in a nice table
+    let pnl_report = PnlReport::new();
+    let all_trades = dashboard.trade_state.get_all_trades();
+    let report = pnl_report.report(all_trades, Method::Fifo);
+    println!("{}", report);
+    
+    // Optionally generate P&L graphs
+    pnl_report.graph_default(all_trades, Method::Fifo)?;
 
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);

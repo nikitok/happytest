@@ -467,16 +467,16 @@ impl GptMarketMaker {
 }
 
 impl Strategy for GptMarketMaker {
+    fn name(&self) -> &str {
+        "GPT Market Maker"
+    }
+
     fn propose_trade(&mut self, order_book: &OrderBook) -> Option<Trade> {
         self.propose_trade(order_book)
     }
-    
+
     fn update_position(&mut self, trade: &Trade, filled: bool) {
         self.update_position(trade, filled)
-    }
-    
-    fn name(&self) -> &str {
-        "GPT Market Maker"
     }
     
     fn get_position(&self, symbol: &str) -> f64 {

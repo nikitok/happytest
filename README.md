@@ -32,16 +32,37 @@ RUST_LOG=info cargo run --release -- --file path/to/data.jsonl
 
 ## Example Run with Settings
 
+### Basic usage with GPT Market Maker strategy:
+```bash
+cargo run --release -- --file /Users/noviiden/java/projects/happytest/data/ETHUSDT_3600.jsonl gpt
+```
+
+### With custom backtest parameters:
 ```bash
 cargo run --release -- \
   --file data/BTCUSDT_300.jsonl \
   --fill-rate 0.95 \
   --slippage-bps 1.0 \
-  --rejection-rate 0.01 \
-  --min-spread-pct 0.0005 \
-  --margin-rate 0.05 \
-  --fix-order-volume 0.005 \
-  --spread-percent 0.005
+  gpt
+```
+
+### With custom strategy parameters:
+```bash
+cargo run --release -- \
+  --file data/BTCUSDT_300.jsonl \
+  gpt \
+  --fix-order-volume 0.01 \
+  --take-profit-bps 30 \
+  --stop-loss-bps 100
+```
+
+### View all available options:
+```bash
+# View general help
+cargo run --release -- --help
+
+# View GPT strategy specific options
+cargo run --release -- gpt --help
 ```
 
 ## Project Structure
