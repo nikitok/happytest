@@ -5,6 +5,7 @@ pub mod data;
 pub mod trading;
 pub mod config;
 pub mod pnl;
+pub mod reader;
 
 // Re-export commonly used types
 pub use core::{
