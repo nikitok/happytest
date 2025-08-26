@@ -1,0 +1,15 @@
+{{ reader_log_path }}/*.log {
+    daily
+    rotate 14
+    maxage 14
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0644 {{ reader_user }} {{ reader_group }}
+    sharedscripts
+    postrotate
+        # Signal any running processes if needed
+        /bin/kill -USR1 $(cat {{ reader_base_path }}/reader.pid 2>/dev/null) 2>/dev/null || true
+    endscript
+}

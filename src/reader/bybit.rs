@@ -79,7 +79,7 @@ impl BybitReader {
     /// Generate base filename for output files
     fn generate_base_filename(&self) -> String {
         let now = Local::now();
-        let date_str = now.format("%Y%m%d_%H%M%S").to_string();
+        let date_str = now.format("%Y%m%d_%H:%M").to_string();
         let duration_str = if self.config.duration_seconds > 0 {
             format!("{}s", self.config.duration_seconds)
         } else {

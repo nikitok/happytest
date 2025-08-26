@@ -1,0 +1,29 @@
+---
+# Default variables for reader role
+
+# Base paths
+reader_base_path: /opt/happytest
+reader_data_path: /var/lib/happytest/data
+reader_log_path: /var/log/happytest
+
+# User configuration
+reader_user: happytest
+reader_group: happytest
+
+# Trading pairs
+trading_pairs:
+  - BTCUSDT
+  - ETHUSDT
+  - SOLUSDT
+  - BNBUSDT
+
+# Collection settings
+collection_interval: 3600  # 1 hour in seconds
+data_retention_days: 30
+
+# Network settings
+default_network: mainnet
+
+# API settings (should be overridden in vault)
+bybit_api_key: ""
+bybit_api_secret: ""

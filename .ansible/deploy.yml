@@ -1,0 +1,62 @@
+---
+- name: Deploy HappyTest Reader to servers
+  hosts: reader_servers
+  become: yes
+  vars_files:
+    - vault.yml
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+    
+    - name: Install required packages
+      package:
+        name:
+          - curl
+          - gcc
+          - pkg-config
+          - libssl-dev
+          - git
+          - cron
+        state: present
+    
+    - name: Create application user
+      user:
+        name: "{{ reader_user }}"
+        group: "{{ reader_group }}"
+        system: yes
+        shell: /bin/bash
+        home: "{{ reader_base_path }}"
+        create_home: yes
+        state: present
+    
+    - name: Create required directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ reader_user }}"
+        group: "{{ reader_group }}"
+        mode: '0755'
+      loop:
+        - "{{ reader_base_path }}"
+        - "{{ reader_data_path }}"
+        - "{{ reader_log_path }}"
+        - "{{ reader_base_path }}/bin"
+        - "{{ reader_base_path }}/config"
+
+  roles:
+    - reader
+
+  post_tasks:
+    - name: Verify reader deployment
+      command: "{{ reader_base_path }}/bin/happytest --version"
+      register: reader_version
+      changed_when: false
+      failed_when: reader_version.rc != 0
+    
+    - name: Display deployment status
+      debug:
+        msg: "Reader deployed successfully: {{ reader_version.stdout }}"

@@ -1,0 +1,140 @@
+#!/bin/bash
+# HappyTest Reader wrapper script
+
+set -e
+
+# Configuration
+READER_BASE="{{ reader_base_path }}"
+READER_BIN="${READER_BASE}/bin/happytest"
+DATA_PATH="{{ reader_data_path }}"
+LOG_PATH="{{ reader_log_path }}"
+CONFIG_FILE="${READER_BASE}/config/config.toml"
+
+# Environment variables
+export RUST_LOG=info
+export BYBIT_API_KEY="{{ bybit_api_key }}"
+export BYBIT_API_SECRET="{{ bybit_api_secret }}"
+
+# Trading pairs
+PAIRS=({% for pair in trading_pairs %}"{{ pair }}" {% endfor %})
+
+# Function to collect data for a single pair
+collect_pair() {
+    local pair=$1
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local output_file="${DATA_PATH}/${pair}_${timestamp}_{{ collection_interval }}s_mainnet.jsonl"
+    
+    echo "[$(date)] Starting collection for ${pair}..."
+    
+    # Run the reader with specified parameters
+    timeout 3500 ${READER_BIN} reader \
+        --symbol "${pair}" \
+        --duration {{ collection_interval }} \
+        --output "${output_file}" \
+        --network mainnet \
+        2>&1 | tee -a "${LOG_PATH}/reader_${pair}.log"
+    
+    if [ $? -eq 0 ]; then
+        echo "[$(date)] Successfully collected data for ${pair}: ${output_file}"
+        
+        # Optional: Convert to Parquet format if needed
+        if command -v python3 &> /dev/null; then
+            python3 -c "
+import pandas as pd
+import pyarrow.parquet as pq
+try:
+    df = pd.read_json('${output_file}', lines=True)
+    parquet_file = '${output_file}'.replace('.jsonl', '.parquet')
+    df.to_parquet(parquet_file)
+    print(f'Converted to Parquet: {parquet_file}')
+except Exception as e:
+    print(f'Parquet conversion failed: {e}')
+            " 2>/dev/null || true
+        fi
+    else
+        echo "[$(date)] Failed to collect data for ${pair}"
+        return 1
+    fi
+}
+
+# Function to collect all pairs
+collect() {
+    echo "[$(date)] Starting data collection for all pairs..."
+    
+    for pair in "${PAIRS[@]}"; do
+        collect_pair "${pair}" &
+    done
+    
+    # Wait for all background jobs to complete
+    wait
+    
+    echo "[$(date)] Data collection completed for all pairs"
+}
+
+# Function to check reader status
+status() {
+    echo "Reader Status:"
+    echo "-------------"
+    echo "Binary: ${READER_BIN}"
+    echo "Data Path: ${DATA_PATH}"
+    echo "Log Path: ${LOG_PATH}"
+    echo "Trading Pairs: ${PAIRS[@]}"
+    echo ""
+    
+    # Check if reader binary exists
+    if [ -f "${READER_BIN}" ]; then
+        echo "Reader binary: OK"
+        ${READER_BIN} --version
+    else
+        echo "Reader binary: NOT FOUND"
+    fi
+    
+    # Check data directory
+    if [ -d "${DATA_PATH}" ]; then
+        echo "Data directory: OK"
+        echo "Latest files:"
+        ls -lht "${DATA_PATH}" | head -5
+    else
+        echo "Data directory: NOT FOUND"
+    fi
+    
+    # Check cron jobs
+    echo ""
+    echo "Cron jobs:"
+    crontab -u {{ reader_user }} -l 2>/dev/null | grep -E "reader|happytest" || echo "No cron jobs found"
+}
+
+# Main script logic
+case "$1" in
+    collect)
+        collect
+        ;;
+    collect-pair)
+        if [ -z "$2" ]; then
+            echo "Usage: $0 collect-pair <SYMBOL>"
+            exit 1
+        fi
+        collect_pair "$2"
+        ;;
+    status)
+        status
+        ;;
+    test)
+        echo "Running test collection (10 seconds)..."
+        ${READER_BIN} reader \
+            --symbol "BTCUSDT" \
+            --duration 10 \
+            --output "/tmp/test_$(date +%s).jsonl" \
+            --network testnet
+        ;;
+    *)
+        echo "Usage: $0 {collect|collect-pair|status|test}"
+        echo ""
+        echo "Commands:"
+        echo "  collect       - Collect data for all configured pairs"
+        echo "  collect-pair  - Collect data for a specific pair"
+        echo "  status        - Show reader status and configuration"
+        echo "  test          - Run a quick test collection"
+        exit 1
+        ;;
+esac

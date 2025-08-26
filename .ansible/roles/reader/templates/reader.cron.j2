@@ -1,0 +1,8 @@
+# HappyTest Reader - Hourly data collection
+# This cron job runs every hour to collect orderbook data from Bybit
+
+# Collect data every hour at minute 5
+5 * * * * {{ reader_user }} {{ reader_base_path }}/bin/reader.sh collect >> {{ reader_log_path }}/reader_cron.log 2>&1
+
+# Optional: Run additional collection at minute 35 for redundancy
+# 35 * * * * {{ reader_user }} {{ reader_base_path }}/bin/reader.sh collect >> {{ reader_log_path }}/reader_cron.log 2>&1

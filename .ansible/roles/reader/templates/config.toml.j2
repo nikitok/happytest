@@ -1,0 +1,46 @@
+# HappyTest Reader Configuration
+
+[reader]
+# Base configuration
+base_path = "{{ reader_base_path }}"
+data_path = "{{ reader_data_path }}"
+log_path = "{{ reader_log_path }}"
+
+# Collection settings
+default_duration = {{ collection_interval }}
+default_network = "mainnet"
+batch_size = 100
+max_retries = 3
+retry_delay = 5
+
+[bybit]
+# API credentials (can be overridden by environment variables)
+api_key = "{{ bybit_api_key }}"
+api_secret = "{{ bybit_api_secret }}"
+base_url = "https://api.bybit.com"
+testnet_url = "https://api-testnet.bybit.com"
+
+# Rate limiting
+max_requests_per_second = 10
+request_timeout = 30
+
+[pairs]
+# Trading pairs to collect
+symbols = [
+{% for pair in trading_pairs %}
+    "{{ pair }}",
+{% endfor %}
+]
+
+[storage]
+# Data storage settings
+format = "jsonl"
+compression = false
+enable_parquet = true
+retention_days = {{ data_retention_days }}
+
+[monitoring]
+# Monitoring and alerting
+enable_metrics = true
+metrics_port = 9090
+health_check_port = 8080

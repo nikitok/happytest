@@ -1,0 +1,30 @@
+[Unit]
+Description=HappyTest Reader Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ reader_user }}
+Group={{ reader_group }}
+WorkingDirectory={{ reader_base_path }}
+Environment="RUST_LOG=info"
+Environment="BYBIT_API_KEY={{ bybit_api_key }}"
+Environment="BYBIT_API_SECRET={{ bybit_api_secret }}"
+ExecStart={{ reader_base_path }}/bin/reader.sh collect
+StandardOutput=append:{{ reader_log_path }}/reader_service.log
+StandardError=append:{{ reader_log_path }}/reader_service_error.log
+
+# Restart policy
+Restart=no
+TimeoutStopSec=3600
+
+# Security settings
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths={{ reader_data_path }} {{ reader_log_path }}
+
+[Install]
+WantedBy=multi-user.target

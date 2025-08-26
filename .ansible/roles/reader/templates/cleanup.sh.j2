@@ -1,0 +1,26 @@
+#!/bin/bash
+# HappyTest data cleanup script
+# Removes old data files based on retention policy
+
+set -e
+
+DATA_PATH="{{ reader_data_path }}"
+RETENTION_DAYS={{ data_retention_days }}
+LOG_FILE="{{ reader_log_path }}/cleanup.log"
+
+echo "[$(date)] Starting cleanup process..." | tee -a ${LOG_FILE}
+
+# Find and remove old JSONL files
+find ${DATA_PATH} -name "*.jsonl" -type f -mtime +${RETENTION_DAYS} -print -delete 2>&1 | tee -a ${LOG_FILE}
+
+# Find and remove old Parquet files
+find ${DATA_PATH} -name "*.parquet" -type f -mtime +${RETENTION_DAYS} -print -delete 2>&1 | tee -a ${LOG_FILE}
+
+# Clean up empty directories
+find ${DATA_PATH} -type d -empty -delete 2>&1 | tee -a ${LOG_FILE}
+
+# Report disk usage
+echo "[$(date)] Current disk usage:" | tee -a ${LOG_FILE}
+du -sh ${DATA_PATH} | tee -a ${LOG_FILE}
+
+echo "[$(date)] Cleanup completed" | tee -a ${LOG_FILE}

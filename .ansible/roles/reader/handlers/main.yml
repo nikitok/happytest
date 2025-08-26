@@ -1,0 +1,16 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart reader service
+  systemd:
+    name: happytest-reader
+    state: restarted
+    enabled: yes
+  when: ansible_service_mgr == "systemd"
+
+- name: reload cron
+  service:
+    name: cron
+    state: reloaded
