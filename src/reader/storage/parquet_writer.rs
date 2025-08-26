@@ -85,6 +85,7 @@ impl ParquetWriter {
             if let Some(writer) = &mut self.writer {
                 let batch = Self::convert_to_arrow_batch(&self.buffer)?;
                 writer.write(&batch).context("Failed to write Parquet batch")?;
+                log::debug!("Wrote batch of {} records to Parquet file", self.buffer.len());
                 self.buffer.clear();
             }
         }

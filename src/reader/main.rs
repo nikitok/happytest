@@ -1,6 +1,7 @@
 use clap::Parser;
 use env_logger;
 use happytest::reader::{BybitReader, ReaderConfig};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -19,7 +20,7 @@ struct Args {
     interval: u64,
     
     /// Duration to run in seconds (0 for infinite)
-    #[arg(short, long, default_value_t = 3600)]
+    #[arg(short, long, default_value_t = 60)]
     duration: u64,
     
     /// Output directory for data files
@@ -41,7 +42,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     
     let args = Args::parse();
     
@@ -67,20 +68,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let reader = BybitReader::new(config)?;
     
+    // Create a cancellation token for graceful shutdown
+    let cancel_token = CancellationToken::new();
+    let cancel_clone = cancel_token.clone();
+    
     // Handle Ctrl+C gracefully
     let reader_handle = tokio::spawn(async move {
-        if let Err(e) = reader.run().await {
+        if let Err(e) = reader.run_with_cancellation(cancel_clone).await {
             eprintln!("Reader error: {}", e);
         }
     });
     
+    // Set up Ctrl+C handler
+    let ctrl_c = tokio::signal::ctrl_c();
+    
     // Wait for the reader to complete or Ctrl+C
     tokio::select! {
-        _ = reader_handle => {
-            println!("\nReader completed");
+        result = reader_handle => {
+            match result {
+                Ok(_) => println!("\nReader completed"),
+                Err(e) => eprintln!("Reader task error: {}", e),
+            }
         }
-        _ = tokio::signal::ctrl_c() => {
+        _ = ctrl_c => {
             println!("\nReceived interrupt signal, shutting down...");
+            // Signal the reader to stop
+            cancel_token.cancel();
+            // Give the reader some time to clean up
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
     }
     

@@ -1,22 +1,23 @@
 use anyhow::{Context, Result};
 use chrono::Local;
+use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
-use reqwest;
 use std::fs::create_dir_all;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::time::sleep;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tokio::time::interval;
+use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 // Import models and storage
-use super::models::{BybitResponse, OrderbookData};
-use super::storage::{StorageWriter, WriterConfig, JsonlWriter, ParquetWriter};
+use super::models::{OrderbookData, WsRequest, WsResponse};
+use super::storage::{JsonlWriter, ParquetWriter, StorageWriter, WriterConfig};
 
 /// Configuration for the Bybit reader
 #[derive(Debug, Clone)]
 pub struct ReaderConfig {
     /// Symbol to fetch data for (e.g., "BTCUSDT", "ETHUSDT")
     pub symbol: String,
-    /// Interval in seconds between data fetches
+    /// Interval in seconds between flushes
     pub interval_seconds: u64,
     /// Output directory for data files
     pub output_dir: String,
@@ -34,7 +35,7 @@ impl Default for ReaderConfig {
     fn default() -> Self {
         Self {
             symbol: "ETHUSDT".to_string(),
-            interval_seconds: 1,
+            interval_seconds: 10, // Flush every 10 seconds by default
             output_dir: "./data".to_string(),
             testnet: false,
             depth: 50,
@@ -44,10 +45,9 @@ impl Default for ReaderConfig {
     }
 }
 
-/// Bybit data reader
+/// Bybit data reader using WebSocket
 pub struct BybitReader {
     config: ReaderConfig,
-    client: reqwest::Client,
     writers: Arc<Mutex<Vec<Box<dyn StorageWriter>>>>,
     start_time: SystemTime,
 }
@@ -58,26 +58,19 @@ impl BybitReader {
         // Create output directory if it doesn't exist
         create_dir_all(&config.output_dir).context("Failed to create output directory")?;
 
-        // Create HTTP client
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()
-            .context("Failed to create HTTP client")?;
-
         Ok(Self {
             config,
-            client,
             writers: Arc::new(Mutex::new(Vec::new())),
             start_time: SystemTime::now(),
         })
     }
 
-    /// Get the base URL for the API
-    fn get_base_url(&self) -> &'static str {
+    /// Get the WebSocket URL
+    fn get_ws_url(&self) -> &'static str {
         if self.config.testnet {
-            "https://api-testnet.bybit.com"
+            "wss://stream-testnet.bybit.com/v5/public/linear"
         } else {
-            "https://api.bybit.com"
+            "wss://stream.bybit.com/v5/public/linear"
         }
     }
 
@@ -130,54 +123,6 @@ impl BybitReader {
         Ok(writers)
     }
 
-    /// Fetch orderbook data from Bybit API
-    async fn fetch_orderbook(&self) -> Result<OrderbookData> {
-        let url = format!("{}/v5/market/orderbook", self.get_base_url());
-
-        let response = self
-            .client
-            .get(&url)
-            .query(&[
-                ("category", "linear"),
-                ("symbol", &self.config.symbol),
-                ("limit", &self.config.depth.to_string()),
-            ])
-            .send()
-            .await
-            .context("Failed to send request")?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let text = response.text().await.unwrap_or_default();
-            return Err(anyhow::anyhow!("API request failed: {} - {}", status, text));
-        }
-
-        let bybit_response: BybitResponse =
-            response.json().await.context("Failed to parse response")?;
-
-        if bybit_response.ret_code != 0 {
-            return Err(anyhow::anyhow!(
-                "API error: {} - {}",
-                bybit_response.ret_code,
-                bybit_response.ret_msg
-            ));
-        }
-
-        let fetch_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as i64;
-
-        Ok(OrderbookData {
-            symbol: bybit_response.result.s,
-            bids: bybit_response.result.b,
-            asks: bybit_response.result.a,
-            timestamp: bybit_response.result.ts,
-            update_id: bybit_response.result.u,
-            fetch_time,
-        })
-    }
-
     /// Write data to all storage writers
     fn write_data(&self, data: &OrderbookData) -> Result<()> {
         let mut writers_guard = self.writers.lock().unwrap();
@@ -185,13 +130,6 @@ impl BybitReader {
         for writer in writers_guard.iter_mut() {
             if let Err(e) = writer.write(data) {
                 error!("Failed to write data to {}: {}", writer.file_extension(), e);
-            }
-        }
-
-        // Flush writers periodically
-        for writer in writers_guard.iter_mut() {
-            if let Err(e) = writer.flush() {
-                error!("Failed to flush {}: {}", writer.file_extension(), e);
             }
         }
 
@@ -217,10 +155,10 @@ impl BybitReader {
         Ok(())
     }
 
-    /// Run the reader
+    /// Run the WebSocket reader
     pub async fn run(&self) -> Result<()> {
-        info!("Starting Bybit reader for symbol: {}", self.config.symbol);
-        info!("Interval: {} seconds", self.config.interval_seconds);
+        info!("Starting Bybit WebSocket reader for symbol: {}", self.config.symbol);
+        info!("Flush interval: {} seconds", self.config.interval_seconds);
         info!(
             "Duration: {} seconds",
             if self.config.duration_seconds > 0 {
@@ -229,7 +167,14 @@ impl BybitReader {
                 "infinite".to_string()
             }
         );
-        info!("Parquet output: {}", if self.config.save_parquet { "enabled" } else { "disabled" });
+        info!(
+            "Parquet output: {}",
+            if self.config.save_parquet {
+                "enabled"
+            } else {
+                "disabled"
+            }
+        );
 
         // Initialize storage writers
         {
@@ -237,8 +182,33 @@ impl BybitReader {
             *writers_guard = self.init_writers()?;
         }
 
-        let mut fetch_count = 0u64;
+        // Connect to WebSocket
+        let ws_url = self.get_ws_url();
+        info!("Connecting to WebSocket: {}", ws_url);
+
+        let (ws_stream, _response) = connect_async(ws_url)
+            .await
+            .context("Failed to connect to WebSocket")?;
+
+        info!("WebSocket connected successfully");
+
+        let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+
+        // Subscribe to orderbook
+        let subscribe_msg = WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
+        let subscribe_text = serde_json::to_string(&subscribe_msg)?;
+        ws_sender
+            .send(Message::Text(subscribe_text))
+            .await
+            .context("Failed to send subscribe message")?;
+
+        info!("Subscribed to orderbook for {}", self.config.symbol);
+
+        let mut message_count = 0u64;
         let mut error_count = 0u64;
+        let mut last_ping = Instant::now();
+        let mut flush_interval = interval(Duration::from_secs(self.config.interval_seconds));
+        flush_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
         loop {
             // Check if we should stop
@@ -250,38 +220,118 @@ impl BybitReader {
                 }
             }
 
-            // Fetch orderbook data
-            match self.fetch_orderbook().await {
-                Ok(data) => {
-                    fetch_count += 1;
-
-                    // Write to storage
-                    if let Err(e) = self.write_data(&data) {
-                        error!("Failed to write data: {}", e);
-                        error_count += 1;
-                    }
-
-                    if fetch_count % 60 == 0 {
-                        info!(
-                            "Fetched {} orderbook snapshots, {} errors",
-                            fetch_count, error_count
-                        );
-                    }
+            // Send ping every 20 seconds
+            if last_ping.elapsed() >= Duration::from_secs(20) {
+                let ping_msg = WsRequest::ping();
+                let ping_text = serde_json::to_string(&ping_msg)?;
+                if let Err(e) = ws_sender.send(Message::Text(ping_text)).await {
+                    warn!("Failed to send ping: {}", e);
                 }
-                Err(e) => {
-                    error!("Failed to fetch orderbook: {}", e);
-                    error_count += 1;
-
-                    // If too many consecutive errors, wait a bit longer
-                    if error_count % 10 == 0 {
-                        warn!("Multiple errors occurred, waiting 5 seconds...");
-                        sleep(Duration::from_secs(5)).await;
-                    }
-                }
+                last_ping = Instant::now();
             }
 
-            // Wait for the next interval
-            sleep(Duration::from_secs(self.config.interval_seconds)).await;
+            tokio::select! {
+                // Handle WebSocket messages
+                Some(msg) = ws_receiver.next() => {
+                    match msg {
+                        Ok(Message::Text(text)) => {
+                            match serde_json::from_str::<WsResponse>(&text) {
+                                Ok(response) => {
+                                    // Handle subscription confirmation
+                                    if let Some(op) = &response.op {
+                                        if op == "subscribe" {
+                                            if response.success == Some(true) {
+                                                info!("Subscription confirmed");
+                                            } else {
+                                                warn!("Subscription failed: {:?}", response.ret_msg);
+                                            }
+                                        } else if op == "pong" {
+                                            debug!("Received pong");
+                                        }
+                                    }
+
+                                    // Handle orderbook data
+                                    if let Some(data) = response.data {
+                                        // Only process if this is an orderbook update (has topic)
+                                        if response.topic.is_some() {
+                                            message_count += 1;
+
+                                            let fetch_time = SystemTime::now()
+                                                .duration_since(UNIX_EPOCH)
+                                                .unwrap()
+                                                .as_millis() as i64;
+
+                                            let orderbook_data = OrderbookData {
+                                                symbol: data.s,
+                                                bids: data.b,
+                                                asks: data.a,
+                                                timestamp: response.ts.unwrap_or(fetch_time),
+                                                update_id: data.u,
+                                                fetch_time,
+                                            };
+
+                                            // Write to storage
+                                            if let Err(e) = self.write_data(&orderbook_data) {
+                                                error!("Failed to write data: {}", e);
+                                                error_count += 1;
+                                            }
+
+                                            if message_count % 100 == 0 {
+                                                info!(
+                                                    "Processed {} orderbook messages, {} errors",
+                                                    message_count, error_count
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    debug!("Failed to parse message: {} - Text: {}", e, text);
+                                }
+                            }
+                        }
+                        Ok(Message::Close(_)) => {
+                            info!("WebSocket closed by server");
+                            break;
+                        }
+                        Ok(Message::Ping(data)) => {
+                            debug!("Received ping, sending pong");
+                            if let Err(e) = ws_sender.send(Message::Pong(data)).await {
+                                warn!("Failed to send pong: {}", e);
+                            }
+                        }
+                        Ok(_) => {
+                            // Ignore other message types
+                        }
+                        Err(e) => {
+                            error!("WebSocket error: {}", e);
+                            error_count += 1;
+                            
+                            // If too many errors, try to reconnect
+                            if error_count % 10 == 0 {
+                                error!("Too many errors, stopping");
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Periodic flush based on interval_seconds
+                _ = flush_interval.tick() => {
+                    let mut writers_guard = self.writers.lock().unwrap();
+                    for writer in writers_guard.iter_mut() {
+                        if let Err(e) = writer.flush() {
+                            error!("Failed to flush {}: {}", writer.file_extension(), e);
+                        }
+                    }
+                    debug!("Flushed writers after {} seconds", self.config.interval_seconds);
+                }
+            }
+        }
+
+        // Close WebSocket connection
+        if let Err(e) = ws_sender.close().await {
+            warn!("Failed to close WebSocket: {}", e);
         }
 
         // Close all writers
@@ -290,8 +340,215 @@ impl BybitReader {
         }
 
         info!(
-            "Reader finished. Total fetches: {}, errors: {}",
-            fetch_count, error_count
+            "Reader finished. Total messages: {}, errors: {}",
+            message_count, error_count
+        );
+
+        Ok(())
+    }
+
+    /// Run the reader with cancellation support
+    pub async fn run_with_cancellation(
+        &self,
+        cancel_token: tokio_util::sync::CancellationToken,
+    ) -> Result<()> {
+        info!("Starting Bybit WebSocket reader for symbol: {}", self.config.symbol);
+        info!("Flush interval: {} seconds", self.config.interval_seconds);
+        info!(
+            "Duration: {} seconds",
+            if self.config.duration_seconds > 0 {
+                self.config.duration_seconds.to_string()
+            } else {
+                "infinite".to_string()
+            }
+        );
+        info!(
+            "Parquet output: {}",
+            if self.config.save_parquet {
+                "enabled"
+            } else {
+                "disabled"
+            }
+        );
+
+        // Initialize storage writers
+        {
+            let mut writers_guard = self.writers.lock().unwrap();
+            *writers_guard = self.init_writers()?;
+        }
+
+        // Connect to WebSocket
+        let ws_url = self.get_ws_url();
+        info!("Connecting to WebSocket: {}", ws_url);
+
+        let (ws_stream, _response) = connect_async(ws_url)
+            .await
+            .context("Failed to connect to WebSocket")?;
+
+        info!("WebSocket connected successfully");
+
+        let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+
+        // Subscribe to orderbook
+        let subscribe_msg = WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
+        let subscribe_text = serde_json::to_string(&subscribe_msg)?;
+        ws_sender
+            .send(Message::Text(subscribe_text))
+            .await
+            .context("Failed to send subscribe message")?;
+
+        info!("Subscribed to orderbook for {}", self.config.symbol);
+
+        let mut message_count = 0u64;
+        let mut error_count = 0u64;
+        let mut last_ping = Instant::now();
+        let mut flush_interval = interval(Duration::from_secs(self.config.interval_seconds));
+        flush_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        loop {
+            // Check if we should stop due to cancellation
+            if cancel_token.is_cancelled() {
+                info!("Cancellation requested, stopping reader");
+                break;
+            }
+
+            // Check if we should stop due to duration
+            if self.config.duration_seconds > 0 {
+                let elapsed = self.start_time.elapsed().unwrap().as_secs();
+                if elapsed >= self.config.duration_seconds {
+                    info!("Duration reached, stopping reader");
+                    break;
+                }
+            }
+
+            // Send ping every 20 seconds
+            if last_ping.elapsed() >= Duration::from_secs(20) {
+                let ping_msg = WsRequest::ping();
+                let ping_text = serde_json::to_string(&ping_msg)?;
+                if let Err(e) = ws_sender.send(Message::Text(ping_text)).await {
+                    warn!("Failed to send ping: {}", e);
+                }
+                last_ping = Instant::now();
+            }
+
+            tokio::select! {
+                // Handle WebSocket messages
+                Some(msg) = ws_receiver.next() => {
+                    match msg {
+                        Ok(Message::Text(text)) => {
+                            match serde_json::from_str::<WsResponse>(&text) {
+                                Ok(response) => {
+                                    // Handle subscription confirmation
+                                    if let Some(op) = &response.op {
+                                        if op == "subscribe" {
+                                            if response.success == Some(true) {
+                                                info!("Subscription confirmed");
+                                            } else {
+                                                warn!("Subscription failed: {:?}", response.ret_msg);
+                                            }
+                                        } else if op == "pong" {
+                                            debug!("Received pong");
+                                        }
+                                    }
+
+                                    // Handle orderbook data
+                                    if let Some(data) = response.data {
+                                        // Only process if this is an orderbook update (has topic)
+                                        if response.topic.is_some() {
+                                            message_count += 1;
+
+                                            let fetch_time = SystemTime::now()
+                                                .duration_since(UNIX_EPOCH)
+                                                .unwrap()
+                                                .as_millis() as i64;
+
+                                            let orderbook_data = OrderbookData {
+                                                symbol: data.s,
+                                                bids: data.b,
+                                                asks: data.a,
+                                                timestamp: response.ts.unwrap_or(fetch_time),
+                                                update_id: data.u,
+                                                fetch_time,
+                                            };
+
+                                            // Write to storage
+                                            if let Err(e) = self.write_data(&orderbook_data) {
+                                                error!("Failed to write data: {}", e);
+                                                error_count += 1;
+                                            }
+
+                                            if message_count % 100 == 0 {
+                                                info!(
+                                                    "Processed {} orderbook messages, {} errors",
+                                                    message_count, error_count
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    debug!("Failed to parse message: {} - Text: {}", e, text);
+                                }
+                            }
+                        }
+                        Ok(Message::Close(_)) => {
+                            info!("WebSocket closed by server");
+                            break;
+                        }
+                        Ok(Message::Ping(data)) => {
+                            debug!("Received ping, sending pong");
+                            if let Err(e) = ws_sender.send(Message::Pong(data)).await {
+                                warn!("Failed to send pong: {}", e);
+                            }
+                        }
+                        Ok(_) => {
+                            // Ignore other message types
+                        }
+                        Err(e) => {
+                            error!("WebSocket error: {}", e);
+                            error_count += 1;
+                            
+                            // If too many errors, try to reconnect
+                            if error_count % 10 == 0 {
+                                error!("Too many errors, stopping");
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Periodic flush based on interval_seconds
+                _ = flush_interval.tick() => {
+                    let mut writers_guard = self.writers.lock().unwrap();
+                    for writer in writers_guard.iter_mut() {
+                        if let Err(e) = writer.flush() {
+                            error!("Failed to flush {}: {}", writer.file_extension(), e);
+                        }
+                    }
+                    debug!("Flushed writers after {} seconds", self.config.interval_seconds);
+                }
+                
+                // Check for cancellation
+                _ = cancel_token.cancelled() => {
+                    info!("Cancellation requested during operation");
+                    break;
+                }
+            }
+        }
+
+        // Close WebSocket connection
+        if let Err(e) = ws_sender.close().await {
+            warn!("Failed to close WebSocket: {}", e);
+        }
+
+        // Close all writers
+        if let Err(e) = self.close_writers() {
+            error!("Failed to close writers: {}", e);
+        }
+
+        info!(
+            "Reader finished. Total messages: {}, errors: {}",
+            message_count, error_count
         );
 
         Ok(())
@@ -306,7 +563,7 @@ mod tests {
     fn test_config_default() {
         let config = ReaderConfig::default();
         assert_eq!(config.symbol, "ETHUSDT");
-        assert_eq!(config.interval_seconds, 1);
+        assert_eq!(config.interval_seconds, 10);
         assert_eq!(config.output_dir, "./data");
         assert!(!config.testnet);
         assert_eq!(config.depth, 50);
@@ -314,4 +571,3 @@ mod tests {
         assert!(config.save_parquet);
     }
 }
-

@@ -12,7 +12,7 @@ impl Default for WriterConfig {
     fn default() -> Self {
         Self {
             base_filename: String::new(),
-            buffer_size: 100,
+            buffer_size: 1000,
         }
     }
 }
