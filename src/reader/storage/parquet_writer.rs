@@ -80,7 +80,7 @@ impl ParquetWriter {
     }
     
     /// Write buffered data to Parquet file
-    fn write_batch(&mut self) -> Result<()> {
+    fn flush_buffer(&mut self) -> Result<()> {
         if !self.buffer.is_empty() {
             if let Some(writer) = &mut self.writer {
                 let batch = Self::convert_to_arrow_batch(&self.buffer)?;
@@ -121,19 +121,31 @@ impl StorageWriter for ParquetWriter {
         
         // Write batch when buffer is full
         if self.buffer.len() >= self.config.buffer_size {
-            self.write_batch()?;
+            self.flush_buffer()?;
+        }
+        
+        Ok(())
+    }
+    
+    fn write_batch(&mut self, batch: &[OrderbookData]) -> Result<()> {
+        // Add batch to buffer
+        self.buffer.extend_from_slice(batch);
+        
+        // Write if buffer is full or force write if batch is large
+        if self.buffer.len() >= self.config.buffer_size || batch.len() >= self.config.buffer_size {
+            self.flush_buffer()?;
         }
         
         Ok(())
     }
     
     fn flush(&mut self) -> Result<()> {
-        self.write_batch()
+        self.flush_buffer()
     }
     
     fn close(&mut self) -> Result<()> {
         // Write any remaining buffered data
-        self.write_batch()?;
+        self.flush_buffer()?;
         
         // Close the Parquet writer
         if let Some(writer) = self.writer.take() {

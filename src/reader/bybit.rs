@@ -35,12 +35,12 @@ impl Default for ReaderConfig {
     fn default() -> Self {
         Self {
             symbol: "ETHUSDT".to_string(),
-            interval_seconds: 10, // Flush every 10 seconds by default
             output_dir: "./data".to_string(),
             testnet: false,
             depth: 50,
             duration_seconds: 3600, // 1 hour by default
             save_parquet: true,     // Enable Parquet by default
+            interval_seconds: 10, // Flush every 10 seconds by default
         }
     }
 }
@@ -50,6 +50,7 @@ pub struct BybitReader {
     config: ReaderConfig,
     writers: Arc<Mutex<Vec<Box<dyn StorageWriter>>>>,
     start_time: SystemTime,
+    data_buffer: Arc<Mutex<Vec<OrderbookData>>>,
 }
 
 impl BybitReader {
@@ -62,6 +63,7 @@ impl BybitReader {
             config,
             writers: Arc::new(Mutex::new(Vec::new())),
             start_time: SystemTime::now(),
+            data_buffer: Arc::new(Mutex::new(Vec::new())),
         })
     }
 
@@ -103,7 +105,7 @@ impl BybitReader {
         let base_filename = self.generate_base_filename();
         let writer_config = WriterConfig {
             base_filename: base_filename.clone(),
-            buffer_size: 100,
+            ..Default::default()
         };
 
         let mut writers: Vec<Box<dyn StorageWriter>> = Vec::new();
@@ -125,20 +127,39 @@ impl BybitReader {
 
     /// Write data to all storage writers
     fn write_data(&self, data: &OrderbookData) -> Result<()> {
-        let mut writers_guard = self.writers.lock().unwrap();
+        // Add data to buffer instead of writing immediately
+        let mut buffer_guard = self.data_buffer.lock().unwrap();
+        buffer_guard.push(data.clone());
+        
+        // debug!(
+        //     "Buffered orderbook data: {} bids, {} asks (buffer size: {})",
+        //     data.bids.len(),
+        //     data.asks.len(),
+        //     buffer_guard.len()
+        // );
 
-        for writer in writers_guard.iter_mut() {
-            if let Err(e) = writer.write(data) {
-                error!("Failed to write data to {}: {}", writer.file_extension(), e);
+        Ok(())
+    }
+    
+    /// Flush buffered data to all storage writers
+    fn flush_data(&self) -> Result<()> {
+        let mut buffer_guard = self.data_buffer.lock().unwrap();
+        
+        if !buffer_guard.is_empty() {
+            let mut writers_guard = self.writers.lock().unwrap();
+            
+            for writer in writers_guard.iter_mut() {
+                if let Err(e) = writer.write_batch(&buffer_guard) {
+                    error!("Failed to write batch to {}: {}", writer.file_extension(), e);
+                }
             }
+            
+            let batch_size = buffer_guard.len();
+            buffer_guard.clear();
+            
+            debug!("Flushed batch of {} records to storage", batch_size);
         }
-
-        debug!(
-            "Wrote orderbook data: {} bids, {} asks",
-            data.bids.len(),
-            data.asks.len()
-        );
-
+        
         Ok(())
     }
 
@@ -318,6 +339,12 @@ impl BybitReader {
                 
                 // Periodic flush based on interval_seconds
                 _ = flush_interval.tick() => {
+                    // First flush buffered data
+                    if let Err(e) = self.flush_data() {
+                        error!("Failed to flush data: {}", e);
+                    }
+                    
+                    // Then flush writers
                     let mut writers_guard = self.writers.lock().unwrap();
                     for writer in writers_guard.iter_mut() {
                         if let Err(e) = writer.flush() {
@@ -332,6 +359,11 @@ impl BybitReader {
         // Close WebSocket connection
         if let Err(e) = ws_sender.close().await {
             warn!("Failed to close WebSocket: {}", e);
+        }
+
+        // Flush any remaining buffered data
+        if let Err(e) = self.flush_data() {
+            error!("Failed to flush remaining data: {}", e);
         }
 
         // Close all writers
@@ -519,6 +551,12 @@ impl BybitReader {
                 
                 // Periodic flush based on interval_seconds
                 _ = flush_interval.tick() => {
+                    // First flush buffered data
+                    if let Err(e) = self.flush_data() {
+                        error!("Failed to flush data: {}", e);
+                    }
+                    
+                    // Then flush writers
                     let mut writers_guard = self.writers.lock().unwrap();
                     for writer in writers_guard.iter_mut() {
                         if let Err(e) = writer.flush() {
@@ -539,6 +577,11 @@ impl BybitReader {
         // Close WebSocket connection
         if let Err(e) = ws_sender.close().await {
             warn!("Failed to close WebSocket: {}", e);
+        }
+
+        // Flush any remaining buffered data
+        if let Err(e) = self.flush_data() {
+            error!("Failed to flush remaining data: {}", e);
         }
 
         // Close all writers

@@ -7,7 +7,7 @@ This module provides functionality to fetch and save orderbook data from Bybit A
 ### Run with default parameters
 ```bash
 # From project root
-cargo run --release --bin bybit_reader
+cargo run --release --bin reader
 
 # Or directly from the reader directory
 cd src/reader
@@ -25,7 +25,7 @@ Default configuration:
 
 ### Run with custom parameters using the CLI
 ```bash
-cargo run --release --bin reader -- --symbol BTCUSDT --duration 100
+cargo run --release --bin reader -- --symbol BTCUSDT --duration 120
 ```
 
 ## Module Structure

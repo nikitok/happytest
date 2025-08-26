@@ -25,6 +25,9 @@ pub trait StorageWriter: Send {
     /// Write a single orderbook data record
     fn write(&mut self, data: &OrderbookData) -> Result<()>;
     
+    /// Write a batch of orderbook data records
+    fn write_batch(&mut self, batch: &[OrderbookData]) -> Result<()>;
+    
     /// Flush any buffered data
     fn flush(&mut self) -> Result<()>;
     

@@ -16,7 +16,7 @@ struct Args {
     symbol: String,
     
     /// Interval in seconds between data fetches
-    #[arg(short, long, default_value_t = 1)]
+    #[arg(short, long, default_value_t = 10)]
     interval: u64,
     
     /// Duration to run in seconds (0 for infinite)
@@ -36,7 +36,7 @@ struct Args {
     depth: u32,
     
     /// Save as Parquet in addition to JSONL
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true)]
     parquet: bool,
 }
 
