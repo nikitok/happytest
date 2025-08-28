@@ -98,7 +98,15 @@ impl StorageWriter for ParquetWriter {
         self.config = config;
         
         let filename = format!("{}.parquet", self.config.base_filename);
-        log::info!("Creating Parquet output file: {}", filename);
+        let path = std::path::Path::new(&filename);
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .unwrap_or_default()
+                .join(path)
+        };
+        log::info!("Creating Parquet output file: {}", absolute_path.display());
         
         let file = File::create(&filename)
             .context("Failed to create Parquet output file")?;
@@ -150,7 +158,16 @@ impl StorageWriter for ParquetWriter {
         // Close the Parquet writer
         if let Some(writer) = self.writer.take() {
             writer.close().context("Failed to close Parquet writer")?;
-            log::info!("Parquet file saved: {}.parquet", self.config.base_filename);
+            let filename = format!("{}.parquet", self.config.base_filename);
+            let path = std::path::Path::new(&filename);
+            let absolute_path = if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                std::env::current_dir()
+                    .unwrap_or_default()
+                    .join(path)
+            };
+            log::info!("Parquet file saved: {}", absolute_path.display());
         }
         
         Ok(())

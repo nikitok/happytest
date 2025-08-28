@@ -25,7 +25,7 @@ Default configuration:
 
 ### Run with custom parameters using the CLI
 ```bash
-cargo run --release --bin reader -- --symbol BTCUSDT --duration 120
+cargo run --release --bin reader -- --symbol BTCUSDT --duration 120 --output ./data/custom
 ```
 
 ## Module Structure

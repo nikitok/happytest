@@ -44,7 +44,15 @@ impl StorageWriter for JsonlWriter {
         self.config = config;
         
         let filename = format!("{}.jsonl", self.config.base_filename);
-        log::info!("Creating JSONL output file: {}", filename);
+        let path = std::path::Path::new(&filename);
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .unwrap_or_default()
+                .join(path)
+        };
+        log::info!("Creating JSONL output file: {}", absolute_path.display());
         
         let file = OpenOptions::new()
             .create(true)
@@ -91,7 +99,16 @@ impl StorageWriter for JsonlWriter {
         // Close the JSONL writer
         if let Some(mut writer) = self.writer.take() {
             writer.flush().context("Failed to flush JSONL writer on close")?;
-            log::info!("JSONL file saved: {}.jsonl", self.config.base_filename);
+            let filename = format!("{}.jsonl", self.config.base_filename);
+            let path = std::path::Path::new(&filename);
+            let absolute_path = if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                std::env::current_dir()
+                    .unwrap_or_default()
+                    .join(path)
+            };
+            log::info!("JSONL file saved: {}", absolute_path.display());
         }
         Ok(())
     }

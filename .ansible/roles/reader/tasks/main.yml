@@ -12,7 +12,7 @@
     name: "HappyTest {{ item }} reader"
     user: "{{ reader_user }}"
     minute: "*/59"
-    job: "{{ reader_base_path }}/bin/reader --symbol {{ item }} --duration {{ collection_interval }} >> {{ reader_base_path }}/logs/reader_{{ item | lower }}.log 2>&1"
+    job: "{{ reader_base_path }}/bin/reader --output /Users/banka/data --symbol {{ item }} --duration {{ collection_interval }} >> {{ reader_base_path }}/logs/reader_{{ item | lower }}.log 2>&1"
     state: present
   loop: "{{ trading_pairs }}"
   when: trading_pairs is defined
