@@ -1,0 +1,122 @@
+---
+- name: Install Rust if not present
+  block:
+    - name: Check if Rust is installed
+      command: rustc --version
+      register: rust_check
+      ignore_errors: yes
+      changed_when: false
+    
+    - name: Download Rust installer
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup.sh
+        mode: '0755'
+      when: rust_check.rc != 0
+    
+    - name: Install Rust
+      shell: /tmp/rustup.sh -y
+      become_user: "{{ reader_user }}"
+      when: rust_check.rc != 0
+      environment:
+        CARGO_HOME: "{{ reader_base_path }}/.cargo"
+        RUSTUP_HOME: "{{ reader_base_path }}/.rustup"
+
+- name: Ensure reader_base_path exists
+  file:
+    path: "{{ reader_base_path }}"
+    state: directory
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Create source directory
+  file:
+    path: "{{ reader_base_path }}/source"
+    state: directory
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Copy project source code
+  synchronize:
+    src: "{{ playbook_dir }}/../"
+    dest: "{{ reader_base_path }}/source"
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=target"
+      - "--exclude=.ansible"
+      - "--exclude=data"
+      - "--exclude=*.jsonl"
+      - "--exclude=*.parquet"
+      - "--exclude=.DS_Store"
+      - "--exclude=.idea"
+    owner: no
+    group: no
+  become_user: "{{ reader_user }}"
+
+- name: Set ownership of source directory
+  file:
+    path: "{{ reader_base_path }}/source"
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    recurse: yes
+
+- name: Build the project in release mode
+  shell: |
+    source {{ reader_base_path }}/.cargo/env || true
+    export PATH="{{ reader_base_path }}/.cargo/bin:$PATH"
+    cargo build --release
+  args:
+    chdir: "{{ reader_base_path }}/source"
+  become_user: "{{ reader_user }}"
+  environment:
+    CARGO_HOME: "{{ reader_base_path }}/.cargo"
+    RUSTUP_HOME: "{{ reader_base_path }}/.rustup"
+    PATH: "{{ reader_base_path }}/.cargo/bin:{{ ansible_env.PATH }}"
+  register: build_result
+
+- name: Display build output
+  debug:
+    var: build_result.stdout_lines
+  when: build_result.stdout_lines is defined
+
+- name: Check if binary was built successfully
+  stat:
+    path: "{{ reader_base_path }}/source/target/release/happytest"
+  register: binary_stat
+
+- name: Fail if binary not found
+  fail:
+    msg: "Binary not found at {{ reader_base_path }}/source/target/release/happytest"
+  when: not binary_stat.stat.exists
+
+- name: Create bin directory
+  file:
+    path: "{{ reader_base_path }}/bin"
+    state: directory
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Copy compiled binary to bin directory
+  copy:
+    src: "{{ reader_base_path }}/source/target/release/happytest"
+    dest: "{{ reader_base_path }}/bin/happytest"
+    remote_src: yes
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Copy compiled binary (reader) to bin directory
+  copy:
+    src: "{{ reader_base_path }}/source/target/release/reader"
+    dest: "{{ reader_base_path }}/bin/reader"
+    remote_src: yes
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Display binary location
+  debug:
+    msg: "Binary compiled and installed at {{ reader_base_path }}/bin/happytest"

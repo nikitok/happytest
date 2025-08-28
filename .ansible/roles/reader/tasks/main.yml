@@ -1,116 +1,18 @@
 ---
-- name: Install Rust if not present
-  block:
-    - name: Check if Rust is installed
-      command: rustc --version
-      register: rust_check
-      ignore_errors: yes
-      changed_when: false
-    
-    - name: Download Rust installer
-      get_url:
-        url: https://sh.rustup.rs
-        dest: /tmp/rustup.sh
-        mode: '0755'
-      when: rust_check.rc != 0
-    
-    - name: Install Rust
-      shell: /tmp/rustup.sh -y
-      become_user: "{{ reader_user }}"
-      when: rust_check.rc != 0
-      environment:
-        CARGO_HOME: "{{ reader_base_path }}/.cargo"
-        RUSTUP_HOME: "{{ reader_base_path }}/.rustup"
-
-- name: Copy source code
-  synchronize:
-    src: "{{ playbook_dir }}/../"
-    dest: "{{ reader_base_path }}/source"
-    rsync_opts:
-      - "--exclude=.git"
-      - "--exclude=target"
-      - "--exclude=.ansible"
-      - "--exclude=data"
-      - "--exclude=*.jsonl"
-      - "--exclude=*.parquet"
-    owner: no
-    group: no
-  become_user: "{{ reader_user }}"
-
-- name: Build the reader binary
-  shell: |
-    source {{ reader_base_path }}/.cargo/env
-    cargo build --release
-  args:
-    chdir: "{{ reader_base_path }}/source"
-  become_user: "{{ reader_user }}"
-  environment:
-    CARGO_HOME: "{{ reader_base_path }}/.cargo"
-    RUSTUP_HOME: "{{ reader_base_path }}/.rustup"
-  register: build_result
-
-- name: Copy binary to bin directory
-  copy:
-    src: "{{ reader_base_path }}/source/target/release/happytest"
-    dest: "{{ reader_base_path }}/bin/happytest"
-    remote_src: yes
+- name: Ensure logs directory exists
+  file:
+    path: "{{ reader_base_path }}/logs"
+    state: directory
     owner: "{{ reader_user }}"
     group: "{{ reader_group }}"
     mode: '0755'
 
-- name: Create configuration file
-  template:
-    src: config.toml.j2
-    dest: "{{ reader_base_path }}/config/config.toml"
-    owner: "{{ reader_user }}"
-    group: "{{ reader_group }}"
-    mode: '0640'
-
-- name: Create reader script
-  template:
-    src: reader.sh.j2
-    dest: "{{ reader_base_path }}/bin/reader.sh"
-    owner: "{{ reader_user }}"
-    group: "{{ reader_group }}"
-    mode: '0755'
-
-- name: Setup cron job for hourly data collection
-  template:
-    src: reader.cron.j2
-    dest: /etc/cron.d/happytest-reader
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Create systemd service (optional)
-  template:
-    src: happytest-reader.service.j2
-    dest: /etc/systemd/system/happytest-reader.service
-    owner: root
-    group: root
-    mode: '0644'
-  notify: reload systemd
-
-- name: Create log rotation configuration
-  template:
-    src: logrotate.conf.j2
-    dest: /etc/logrotate.d/happytest
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Create data cleanup script
-  template:
-    src: cleanup.sh.j2
-    dest: "{{ reader_base_path }}/bin/cleanup.sh"
-    owner: "{{ reader_user }}"
-    group: "{{ reader_group }}"
-    mode: '0755'
-
-- name: Setup daily cleanup cron
+- name: Create cron jobs for trading pairs
   cron:
-    name: "HappyTest data cleanup"
+    name: "HappyTest {{ item }} reader"
     user: "{{ reader_user }}"
-    minute: "0"
-    hour: "2"
-    job: "{{ reader_base_path }}/bin/cleanup.sh >> {{ reader_log_path }}/cleanup.log 2>&1"
+    minute: "*/59"
+    job: "{{ reader_base_path }}/bin/reader --symbol {{ item }} --duration {{ collection_interval }} >> {{ reader_base_path }}/logs/reader_{{ item | lower }}.log 2>&1"
+    state: present
+  loop: "{{ trading_pairs }}"
+  when: trading_pairs is defined

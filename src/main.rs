@@ -5,7 +5,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use happytest::{
-    data::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
+    utils::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
     pnl::{PnlReport, Method},
 };
 

@@ -3,7 +3,7 @@ use std::time::Instant;
 use log::{info, warn};
 
 use crate::core::{TradeState, Result, TradeError};
-use crate::data::{FileDataSource, extract_symbol_from_filename};
+use crate::utils::{FileDataSource, extract_symbol_from_filename};
 use crate::strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
 use crate::trading::{BacktestTradeEmitter, BacktestConfig, TradeEmitter};
 use crate::core::DataSource;
