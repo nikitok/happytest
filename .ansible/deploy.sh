@@ -34,11 +34,22 @@ fi
 #
 #echo -e "${GREEN}Build successful!${NC}"
 
-# Check if binary exists
-#if [ ! -f "$PROJECT_DIR/target/release/happytest" ]; then
-#    echo -e "${RED}Error: Binary not found at $PROJECT_DIR/target/release/happytest${NC}"
-#    exit 1
-#fi
+# Check if x86_64-apple-darwin binaries exist
+if [ ! -f "$PROJECT_DIR/target/x86_64-apple-darwin/release/reader" ]; then
+    echo -e "${RED}Error: reader binary not found at $PROJECT_DIR/target/x86_64-apple-darwin/release/reader${NC}"
+    echo -e "${YELLOW}Please run: cargo build --release --target x86_64-apple-darwin${NC}"
+    exit 1
+fi
+
+if [ ! -f "$PROJECT_DIR/target/x86_64-apple-darwin/release/happytest" ]; then
+    echo -e "${RED}Error: happytest binary not found at $PROJECT_DIR/target/x86_64-apple-darwin/release/happytest${NC}"
+    echo -e "${YELLOW}Please run: cargo build --release --target x86_64-apple-darwin${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Found x86_64-apple-darwin binaries:${NC}"
+echo -e "  - reader: $PROJECT_DIR/target/x86_64-apple-darwin/release/reader"
+echo -e "  - happytest: $PROJECT_DIR/target/x86_64-apple-darwin/release/happytest"
 
 # Run ansible playbook
 echo -e "${YELLOW}Running Ansible deployment...${NC}"
@@ -46,7 +57,7 @@ cd "$SCRIPT_DIR"
 
 ansible-playbook \
     -i inventory.ini \
-    deploy_local_compile.yml \
+    deploy.yml \
     --ask-become-pass
 
 if [ $? -eq 0 ]; then

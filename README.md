@@ -105,10 +105,6 @@ cargo install cross
 rustup target add x86_64-apple-darwin
 cargo build --release --target x86_64-apple-darwin
 
-
-rustup target add x86_64-unknown-linux-musl
-cargo build --release --target x86_64-unknown-linux-musl
-
 # Or using cross
 rustup target add x86_64-unknown-linux-gnu
 cross build --release --target x86_64-unknown-linux-gnu
