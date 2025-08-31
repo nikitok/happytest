@@ -46,7 +46,7 @@ cd "$SCRIPT_DIR"
 
 ansible-playbook \
     -i inventory.ini \
-    deploy.yml \
+    deploy_local_compile.yml \
     --ask-become-pass
 
 if [ $? -eq 0 ]; then

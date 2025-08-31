@@ -12,7 +12,7 @@ use tokio_util::sync::CancellationToken;
 )]
 struct Args {
     /// Symbol to fetch data for (e.g., "BTCUSDT", "ETHUSDT")
-    #[arg(short, long, default_value = "ETHUSDT")]
+    #[arg(short, long)]
     symbol: String,
     
     /// Interval in seconds between data fetches
@@ -45,6 +45,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     
     let args = Args::parse();
+    
+    // Validate symbol is not empty
+    if args.symbol.trim().is_empty() {
+        eprintln!("Error: Symbol cannot be empty. Please provide a valid trading pair (e.g., BTCUSDT, ETHUSDT)");
+        std::process::exit(1);
+    }
     
     println!("=== Bybit Orderbook Reader ===");
     println!("Symbol: {}", args.symbol);
