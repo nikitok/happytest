@@ -29,6 +29,8 @@ pub struct ReaderConfig {
     pub duration_seconds: u64,
     /// Save as Parquet in addition to JSONL
     pub save_parquet: bool,
+    /// Save as JSONL format
+    pub save_jsonl: bool,
 }
 
 impl Default for ReaderConfig {
@@ -40,6 +42,7 @@ impl Default for ReaderConfig {
             depth: 50,
             duration_seconds: 3600, // 1 hour by default
             save_parquet: true,     // Enable Parquet by default
+            save_jsonl: true,       // Enable JSONL by default
             interval_seconds: 10, // Flush every 10 seconds by default
         }
     }
@@ -110,10 +113,12 @@ impl BybitReader {
 
         let mut writers: Vec<Box<dyn StorageWriter>> = Vec::new();
 
-        // Always add JSONL writer
-        let mut jsonl_writer = Box::new(JsonlWriter::new());
-        jsonl_writer.init(writer_config.clone())?;
-        writers.push(jsonl_writer);
+        // Add JSONL writer if enabled
+        if self.config.save_jsonl {
+            let mut jsonl_writer = Box::new(JsonlWriter::new());
+            jsonl_writer.init(writer_config.clone())?;
+            writers.push(jsonl_writer);
+        }
 
         // Add Parquet writer if enabled
         if self.config.save_parquet {

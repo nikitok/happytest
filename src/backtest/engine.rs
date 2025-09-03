@@ -3,7 +3,7 @@ use std::time::Instant;
 use log::{info, warn};
 
 use crate::core::{TradeState, Result, TradeError};
-use crate::utils::{FileDataSource, extract_symbol_from_filename};
+use crate::utils::{FileDataSource, ParquetDataSource, extract_symbol_from_filename};
 use crate::strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
 use crate::trading::{BacktestTradeEmitter, BacktestConfig, TradeEmitter};
 use crate::core::DataSource;
@@ -51,12 +51,19 @@ impl BacktestEngine {
         // Create executor
         let mut executor = BacktestTradeEmitter::new(self.config.clone());
         
-        // Create data source
-        let mut data_source = FileDataSource::new(data_file)?
-            .with_batch_size(10000);
+        // Create data source based on file extension
+        let mut data_source: Box<dyn DataSource> = if data_file.extension().and_then(|s| s.to_str()) == Some("parquet") {
+            let mut source = ParquetDataSource::new(data_file)?;
+            source.count_messages()?;
+            Box::new(source)
+        } else {
+            let mut source = FileDataSource::new(data_file)?.with_batch_size(10000);
+            source.count_messages()?;
+            Box::new(source)
+        };
         
         // Count messages for progress tracking
-        let total_messages = data_source.count_messages()?;
+        let total_messages = data_source.total_count().unwrap_or(0);
         if total_messages == 0 {
             warn!("No data found in {:?}, skipping", data_file);
             return Ok(trade_state);
@@ -126,12 +133,19 @@ impl BacktestEngine {
         // Create executor
         let mut executor = BacktestTradeEmitter::new(self.config.clone());
         
-        // Create data source
-        let mut data_source = FileDataSource::new(data_file)?
-            .with_batch_size(10000);
+        // Create data source based on file extension
+        let mut data_source: Box<dyn DataSource> = if data_file.extension().and_then(|s| s.to_str()) == Some("parquet") {
+            let mut source = ParquetDataSource::new(data_file)?;
+            source.count_messages()?;
+            Box::new(source)
+        } else {
+            let mut source = FileDataSource::new(data_file)?.with_batch_size(10000);
+            source.count_messages()?;
+            Box::new(source)
+        };
         
         // Count messages for progress tracking
-        let total_messages = data_source.count_messages()?;
+        let total_messages = data_source.total_count().unwrap_or(0);
         if total_messages == 0 {
             warn!("No data found in {:?}, skipping", data_file);
             return Ok(trade_state);

@@ -22,34 +22,58 @@ if [ ! -f "$SCRIPT_DIR/inventory.ini" ]; then
     exit 1
 fi
 
-# Build the project first
-#echo -e "${YELLOW}Building the project...${NC}"
-#cd "$PROJECT_DIR"
-#cargo build --release
-#
-#if [ $? -ne 0 ]; then
-#    echo -e "${RED}Build failed! Please fix build errors before deploying.${NC}"
-#    exit 1
-#fi
-#
-#echo -e "${GREEN}Build successful!${NC}"
+# Build the project for both architectures
+echo -e "${YELLOW}Building the project for both architectures...${NC}"
+cd "$PROJECT_DIR"
 
-# Check if x86_64-apple-darwin binaries exist
-if [ ! -f "$PROJECT_DIR/target/x86_64-apple-darwin/release/reader" ]; then
-    echo -e "${RED}Error: reader binary not found at $PROJECT_DIR/target/x86_64-apple-darwin/release/reader${NC}"
-    echo -e "${YELLOW}Please run: cargo build --release --target x86_64-apple-darwin${NC}"
+# Build for x86_64
+echo -e "${YELLOW}Building for x86_64-apple-darwin...${NC}"
+cargo build --release --target x86_64-apple-darwin
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Build failed for x86_64-apple-darwin! Please fix build errors before deploying.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}x86_64 build successful!${NC}"
+
+# Build for aarch64
+echo -e "${YELLOW}Building for aarch64-apple-darwin...${NC}"
+cargo build --release --target aarch64-apple-darwin
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Build failed for aarch64-apple-darwin! Please fix build errors before deploying.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}aarch64 build successful!${NC}"
+
+# Get target architecture from inventory
+TARGET_ARCH=$(grep "target_architecture=" "$SCRIPT_DIR/inventory.ini" | cut -d'=' -f2)
+if [ -z "$TARGET_ARCH" ]; then
+    echo -e "${YELLOW}Warning: target_architecture not specified in inventory.ini, defaulting to x86_64${NC}"
+    TARGET_ARCH="x86_64"
+fi
+
+# Set binary path based on architecture
+if [ "$TARGET_ARCH" = "aarch64" ]; then
+    BINARY_PATH="$PROJECT_DIR/target/aarch64-apple-darwin/release"
+    ARCH_DISPLAY="aarch64-apple-darwin"
+else
+    BINARY_PATH="$PROJECT_DIR/target/x86_64-apple-darwin/release"
+    ARCH_DISPLAY="x86_64-apple-darwin"
+fi
+
+# Check if binaries exist for selected architecture
+if [ ! -f "$BINARY_PATH/reader" ]; then
+    echo -e "${RED}Error: reader binary not found at $BINARY_PATH/reader${NC}"
     exit 1
 fi
 
-if [ ! -f "$PROJECT_DIR/target/x86_64-apple-darwin/release/happytest" ]; then
-    echo -e "${RED}Error: happytest binary not found at $PROJECT_DIR/target/x86_64-apple-darwin/release/happytest${NC}"
-    echo -e "${YELLOW}Please run: cargo build --release --target x86_64-apple-darwin${NC}"
+if [ ! -f "$BINARY_PATH/happytest" ]; then
+    echo -e "${RED}Error: happytest binary not found at $BINARY_PATH/happytest${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}Found x86_64-apple-darwin binaries:${NC}"
-echo -e "  - reader: $PROJECT_DIR/target/x86_64-apple-darwin/release/reader"
-echo -e "  - happytest: $PROJECT_DIR/target/x86_64-apple-darwin/release/happytest"
+echo -e "${GREEN}Using $ARCH_DISPLAY binaries:${NC}"
+echo -e "  - reader: $BINARY_PATH/reader"
+echo -e "  - happytest: $BINARY_PATH/happytest"
 
 # Run ansible playbook
 echo -e "${YELLOW}Running Ansible deployment...${NC}"

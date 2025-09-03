@@ -27,7 +27,7 @@ cargo build --release
 cargo run --release -- --file path/to/data.jsonl
 
 # Run with INFO level logging
-RUST_LOG=info cargo run --release -- --file path/to/data.jsonl
+RUST_LOG=error cargo run  --bin happytest --release -- --directory ./data --file BTCUSDT_20250901_11:53_60s_mainnet.parquet gpt
 ```
 
 ## Example Run with Settings

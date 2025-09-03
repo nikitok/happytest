@@ -63,7 +63,7 @@ pub struct GptMarketMakerArgs {
     pub volatility_window: usize,
 
     /// Maximum volatility threshold
-    #[arg(long, default_value_t = 0.000005)]
+    #[arg(long, default_value_t = 0.0001)]
     pub max_volatility_threshold: f64,
 
     /// Volatility cooldown in milliseconds

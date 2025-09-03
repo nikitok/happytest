@@ -1,8 +1,10 @@
 use clap::{Parser, Subcommand};
 use env_logger;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
+use std::fs;
+use regex::Regex;
 
 use happytest::{
     utils::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
@@ -12,9 +14,16 @@ use happytest::{
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// JSONL file with orderbook data
+    /// File path or regex pattern for orderbook data files (JSONL or Parquet)
+    /// Examples: 
+    ///   - Single file: data.jsonl or data.parquet
+    ///   - Pattern: BTCUSDT_202509.*_mainnet.parquet
     #[arg(short, long)]
     file: String,
+    
+    /// Directory to search for files when using regex patterns
+    #[arg(short = 'd', long, default_value = "./data")]
+    directory: String,
 
     /// Order fill rate (0.0-1.0)
     #[arg(long, default_value_t = 0.98)]
@@ -43,26 +52,49 @@ enum StrategyCommand {
     Gpt(happytest::strategy::GptMarketMakerArgs),
 }
 
-fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+/// Find files matching a regex pattern in a directory
+fn find_matching_files(directory: &Path, pattern: &str) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+    let regex = Regex::new(pattern)?;
+    let mut matching_files = Vec::new();
+    
+    // Read directory entries
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        // Skip directories
+        if path.is_dir() {
+            continue;
+        }
+        
+        // Get filename and check if it matches the pattern
+        if let Some(filename) = path.file_name() {
+            if let Some(filename_str) = filename.to_str() {
+                if regex.is_match(filename_str) {
+                    matching_files.push(path);
+                }
+            }
+        }
+    }
+    
+    // Sort files for consistent processing order
+    matching_files.sort();
+    
+    Ok(matching_files)
+}
 
-    let main_start = Instant::now();
-    let args = Args::parse();
-
-    // Create backtest config (only backtest-specific parameters)
-    let backtest_config = BacktestConfig {
-        fill_rate: args.fill_rate,
-        slippage_bps: args.slippage_bps,
-        rejection_rate: args.rejection_rate,
-        margin_rate: args.margin_rate,
-        min_spread_pct: 0.0005, // Default value, could be made a CLI arg if needed
-        spread_percent: 0.005, // Default value, could be made a CLI arg if needed
-        max_order_volume: 0.0,
-    };
-
+/// Process a single file with the backtest engine
+fn process_file(
+    file_path: &Path,
+    args: &Args,
+    backtest_config: &BacktestConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n{}", "=".repeat(60));
+    println!("Processing file: {:?}", file_path);
+    println!("{}", "=".repeat(60));
+    
     // Extract symbol for strategy creation
-    let data_file = Path::new(&args.file);
-    let filename = data_file
+    let filename = file_path
         .file_name()
         .ok_or("Invalid file path")?
         .to_str()
@@ -80,9 +112,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let engine = BacktestEngine::new(backtest_config.clone());
 
     // Run backtest with the constructed strategy
-    let trade_state = engine.run_backtest_with_custom_strategy(data_file, strategy)?;
-
-    // Symbol already extracted above
+    let trade_state = engine.run_backtest_with_custom_strategy(file_path, strategy)?;
 
     // Create dashboard for analysis
     let mut dashboard = TradeDashboard::new(
@@ -115,7 +145,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("{}", report);
     
     // Optionally generate P&L graphs
-    pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some("test_graph"))?;
+    let output_name = format!("{}_{}", 
+        file_path.file_stem().unwrap_or_default().to_str().unwrap_or("output"),
+        "graph"
+    );
+    pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
 
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);
@@ -127,11 +161,70 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     log::info!("============================================================");
     dashboard.to_console(&symbol, &pnl_results, &capital_metrics_map);
+    
+    Ok(())
+}
+
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
+    let main_start = Instant::now();
+    let args = Args::parse();
+
+    // Create backtest config (only backtest-specific parameters)
+    let backtest_config = BacktestConfig {
+        fill_rate: args.fill_rate,
+        slippage_bps: args.slippage_bps,
+        rejection_rate: args.rejection_rate,
+        margin_rate: args.margin_rate,
+        min_spread_pct: 0.0005, // Default value, could be made a CLI arg if needed
+        spread_percent: 0.005, // Default value, could be made a CLI arg if needed
+        max_order_volume: 0.0,
+    };
+
+    // Determine if the input is a file path or a regex pattern
+    let file_path = Path::new(&args.file);
+    
+    let files_to_process = if file_path.exists() && file_path.is_file() {
+        // Single file mode
+        vec![file_path.to_path_buf()]
+    } else {
+        // Pattern mode - search for matching files
+        let search_dir = Path::new(&args.directory);
+        
+        if !search_dir.exists() || !search_dir.is_dir() {
+            return Err(format!("Directory '{}' does not exist or is not a directory", args.directory).into());
+        }
+        
+        println!("Searching for files matching pattern '{}' in directory '{}'", args.file, args.directory);
+        
+        let matching_files = find_matching_files(search_dir, &args.file)?;
+        
+        if matching_files.is_empty() {
+            return Err(format!("No files found matching pattern '{}'", args.file).into());
+        }
+        
+        println!("\nFound {} matching files:", matching_files.len());
+        for (i, file) in matching_files.iter().enumerate() {
+            println!("  {}. {}", i + 1, file.display());
+        }
+        
+        matching_files
+    };
+
+    // Process each file
+    for file_path in &files_to_process {
+        if let Err(e) = process_file(file_path, &args, &backtest_config) {
+            eprintln!("Error processing file {:?}: {}", file_path, e);
+            // Continue with next file instead of failing completely
+        }
+    }
 
     let total_time = main_start.elapsed();
-    println!("{}", "=".repeat(60));
+    println!("\n{}", "=".repeat(60));
     println!(
-        "Total execution time: {:.2} seconds",
+        "Total execution time for {} file(s): {:.2} seconds",
+        files_to_process.len(),
         total_time.as_secs_f64()
     );
     log::info!(

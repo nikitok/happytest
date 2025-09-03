@@ -9,6 +9,7 @@ use crate::core::{OrderBook, errors::{Result, TradeError}, traits::DataSource};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OrderBookMessage {
+    #[serde(alias = "timestamp")]
     pub ts: i64,
     pub data: OrderBookData,
 }
@@ -17,6 +18,17 @@ pub struct OrderBookMessage {
 pub struct OrderBookData {
     pub b: Vec<Vec<String>>, // bids: [[price, quantity], ...]
     pub a: Vec<Vec<String>>, // asks: [[price, quantity], ...]
+}
+
+// Alternative format for newer JSONL/Parquet files
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OrderBookMessageV2 {
+    pub symbol: String,
+    pub bids: Vec<Vec<String>>,
+    pub asks: Vec<Vec<String>>,
+    pub timestamp: i64,
+    pub update_id: i64,
+    pub fetch_time: i64,
 }
 
 /// File-based data source for order book messages
@@ -125,6 +137,41 @@ impl FileDataSource {
         Ok(OrderBook::new(bids, asks, message.ts))
     }
     
+    /// Parse a V2 format message into an OrderBook
+    fn parse_message_v2(message: &OrderBookMessageV2) -> Result<OrderBook> {
+        let mut bids = Vec::new();
+        for bid in &message.bids {
+            if bid.len() >= 2 {
+                let price = bid[0].parse::<f64>()
+                    .map_err(|_| TradeError::InvalidOrderBook(
+                        format!("Invalid bid price: {}", bid[0])
+                    ))?;
+                let quantity = bid[1].parse::<f64>()
+                    .map_err(|_| TradeError::InvalidOrderBook(
+                        format!("Invalid bid quantity: {}", bid[1])
+                    ))?;
+                bids.push((price, quantity));
+            }
+        }
+        
+        let mut asks = Vec::new();
+        for ask in &message.asks {
+            if ask.len() >= 2 {
+                let price = ask[0].parse::<f64>()
+                    .map_err(|_| TradeError::InvalidOrderBook(
+                        format!("Invalid ask price: {}", ask[0])
+                    ))?;
+                let quantity = ask[1].parse::<f64>()
+                    .map_err(|_| TradeError::InvalidOrderBook(
+                        format!("Invalid ask quantity: {}", ask[1])
+                    ))?;
+                asks.push((price, quantity));
+            }
+        }
+        
+        Ok(OrderBook::new(bids, asks, message.timestamp))
+    }
+    
     /// Pre-count total messages in the file (optional, for progress tracking)
     pub fn count_messages(&mut self) -> Result<usize> {
         if let Some(count) = self.total_messages {
@@ -156,10 +203,16 @@ impl DataSource for FileDataSource {
         if let Some(line) = self.buffer.get(self.current_index) {
             self.current_index += 1;
             
-            let message: OrderBookMessage = serde_json::from_str(line)?;
-            let orderbook = Self::parse_message(&message)?;
-            
-            Ok(Some(orderbook))
+            // Try parsing as V2 format first (newer format)
+            if let Ok(message_v2) = serde_json::from_str::<OrderBookMessageV2>(line) {
+                let orderbook = Self::parse_message_v2(&message_v2)?;
+                Ok(Some(orderbook))
+            } else {
+                // Fall back to V1 format (older format)
+                let message: OrderBookMessage = serde_json::from_str(line)?;
+                let orderbook = Self::parse_message(&message)?;
+                Ok(Some(orderbook))
+            }
         } else {
             Ok(None)
         }

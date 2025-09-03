@@ -36,8 +36,12 @@ struct Args {
     depth: u32,
     
     /// Save as Parquet in addition to JSONL
-    #[arg(long, default_value_t = true)]
+    #[arg(long, default_value_t = false)]
     parquet: bool,
+    
+    /// Save as JSONL format
+    #[arg(long, default_value_t = false)]
+    jsonl: bool,
 }
 
 #[tokio::main]
@@ -60,6 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Network: {}", if args.testnet { "testnet" } else { "mainnet" });
     println!("Depth: {}", args.depth);
     println!("Parquet: {}", if args.parquet { "enabled" } else { "disabled" });
+    println!("JSONL: {}", if args.jsonl { "enabled" } else { "disabled" });
     println!("==============================\n");
     
     let config = ReaderConfig {
@@ -70,6 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         depth: args.depth,
         duration_seconds: args.duration,
         save_parquet: args.parquet,
+        save_jsonl: args.jsonl,
     };
     
     let reader = BybitReader::new(config)?;

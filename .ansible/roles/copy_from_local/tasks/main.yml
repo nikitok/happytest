@@ -1,0 +1,48 @@
+---
+
+- name: Ensure reader_base_path exists on remote
+  file:
+    path: "{{ reader_base_path }}"
+    state: directory
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Create bin directory on remote
+  file:
+    path: "{{ reader_base_path }}/bin"
+    state: directory
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Set architecture-specific binary path
+  set_fact:
+    binary_arch_path: "{{ 'aarch64-apple-darwin' if target_architecture == 'aarch64' else 'x86_64-apple-darwin' }}"
+
+- name: Display selected architecture
+  debug:
+    msg: "Using binaries from target/{{ binary_arch_path }}/release/"
+
+- name: Transfer compiled happytest binary to remote server
+  copy:
+    src: "{{ playbook_dir }}/../target/{{ binary_arch_path }}/release/happytest"
+    dest: "{{ reader_base_path }}/bin/happytest"
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Transfer compiled reader binary to remote server
+  copy:
+    src: "{{ playbook_dir }}/../target/{{ binary_arch_path }}/release/reader"
+    dest: "{{ reader_base_path }}/bin/reader"
+    owner: "{{ reader_user }}"
+    group: "{{ reader_group }}"
+    mode: '0755'
+
+- name: Display binary locations
+  debug:
+    msg: 
+      - "Binaries compiled locally and transferred to remote server:"
+      - "  - {{ reader_base_path }}/bin/happytest"
+      - "  - {{ reader_base_path }}/bin/reader"

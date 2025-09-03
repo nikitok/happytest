@@ -44,7 +44,7 @@ impl Default for GptMarketMakerConfig {
             aggressive_close_threshold: 0.9,
             min_profit_bps: 5.0,
             volatility_window: 30,
-            max_volatility_threshold: 0.000005,
+            max_volatility_threshold: 0.0001,
             volatility_cooldown_ms: 5000,
             momentum_window: 10,
             momentum_threshold: 0.0015,
@@ -195,16 +195,16 @@ impl GptMarketMaker {
             return (false, format!("MOMENTUM_COOLDOWN: {:.1}s remaining", time_left));
         }
 
-        // Calculate current volatility
+        // Calculate current volatility - only check if we have enough data
         let volatility = self.calculate_volatility();
-        if volatility > self.config.max_volatility_threshold {
+        if volatility > 0.0 && volatility > self.config.max_volatility_threshold {
             self.last_high_volatility_time = current_time;
             return (false, format!("HIGH_VOLATILITY: {:.4} > {:.4}", volatility, self.config.max_volatility_threshold));
         }
 
-        // Calculate current momentum
+        // Calculate current momentum - only check if we have enough data  
         let momentum = self.calculate_momentum();
-        if momentum.abs() > self.config.momentum_threshold {
+        if momentum != 0.0 && momentum.abs() > self.config.momentum_threshold {
             self.last_strong_momentum_time = current_time;
             return (false, format!("STRONG_MOMENTUM: {:.4} > {:.4}", momentum, self.config.momentum_threshold));
         }
