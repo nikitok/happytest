@@ -2,7 +2,7 @@
 
 > High-performance framework for HFT data acquisition, analysis, and backtesting
 
-![Performance Analysis](./data/BTCUSDT_300_graphcombined.png)
+![Performance Analysis](./data/screen.png)
 
 ## What is HappyTest?
 
