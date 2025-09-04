@@ -14,7 +14,7 @@ pub use core::{
 };
 pub use strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
 pub use backtest::{TradeDashboard, BacktestEngine};
-pub use utils::{FileDataSource, ParquetDataSource, OrderBookMessage};
+pub use utils::{FileDataSource, ParquetDataSource, OrderBookMessage, MultiFileDataSource};
 pub use trading::{TradeEmitter, BacktestTradeEmitter, BacktestConfig};
 pub use config::{AppConfig, validate_config};
 

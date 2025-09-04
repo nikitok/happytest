@@ -3,7 +3,7 @@ use std::time::Instant;
 use log::{info, warn};
 
 use crate::core::{TradeState, Result, TradeError};
-use crate::utils::{FileDataSource, ParquetDataSource, extract_symbol_from_filename};
+use crate::utils::{FileDataSource, ParquetDataSource, extract_symbol_from_filename, MultiFileDataSource};
 use crate::strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
 use crate::trading::{BacktestTradeEmitter, BacktestConfig, TradeEmitter};
 use crate::core::DataSource;
@@ -180,6 +180,79 @@ impl BacktestEngine {
         let execution_time = start_time.elapsed();
         info!("Backtest completed in {:.2} seconds ({} messages processed)", 
              execution_time.as_secs_f64(), processed);
+        
+        Ok(trade_state)
+    }
+    
+    pub fn run_backtest_with_multiple_files(
+        &self,
+        file_paths: &[std::path::PathBuf],
+        mut strategy: Box<dyn Strategy>,
+    ) -> Result<TradeState> {
+        let start_time = Instant::now();
+        
+        if file_paths.is_empty() {
+            return Err(TradeError::DataLoadingError("No files provided".to_string()));
+        }
+        
+        // Extract symbol from first file
+        let first_file = &file_paths[0];
+        let filename = first_file.file_name()
+            .ok_or_else(|| TradeError::DataLoadingError("Invalid file path".to_string()))?
+            .to_str()
+            .ok_or_else(|| TradeError::DataLoadingError("Invalid filename encoding".to_string()))?;
+        let symbol = extract_symbol_from_filename(filename);
+        
+        println!("Processing {} files as continuous range", file_paths.len());
+        println!("Extracted symbol: {}", symbol);
+        println!("Using strategy: {}", strategy.name());
+        
+        // Initialize components
+        let mut trade_state = TradeState::new();
+        
+        // Create executor
+        let mut executor = BacktestTradeEmitter::new(self.config.clone());
+        
+        // Create multi-file data source
+        let mut data_source = MultiFileDataSource::new(file_paths.to_vec())?;
+        
+        // Count messages for progress tracking
+        let total_messages = data_source.total_count().unwrap_or(0);
+        if total_messages == 0 {
+            warn!("No data found in provided files, skipping");
+            return Ok(trade_state);
+        }
+        
+        info!("Running backtest for {} with {} total orderbook messages across {} files", 
+              symbol, total_messages, file_paths.len());
+        
+        let mut processed = 0;
+        
+        // Process each orderbook
+        while let Some(order_book) = data_source.next_orderbook()? {
+            // Propose trade
+            if let Some(pending_order) = strategy.propose_trade(&order_book) {
+                trade_state.add(pending_order.clone());
+                trade_state.add_orderbook(order_book.clone());
+                
+                // Execute trade
+                if let Some(executed_trade) = executor.execute_trade(Some(pending_order)) {
+                    trade_state.change_status(&executed_trade.id, executed_trade.status.clone());
+                    
+                    if executed_trade.status == "filled" {
+                        strategy.update_position(&executed_trade, true);
+                    } else {
+                        strategy.update_position(&executed_trade, false);
+                    }
+                }
+            }
+            
+            processed += 1;
+        }
+        
+        let execution_time = start_time.elapsed();
+        info!("Backtest completed in {:.2} seconds ({} messages processed from {} files)", 
+             execution_time.as_secs_f64(), processed, file_paths.len());
         
         Ok(trade_state)
     }

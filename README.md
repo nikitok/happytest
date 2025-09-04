@@ -40,12 +40,13 @@ happytest/
 # Build optimized binary
 cargo build --release
 
-# Run GPT market maker on sample data
-cargo run --release -- --file data/BTCUSDT.parquet gpt
+# Run GPT market maker on sample data (with regex pattern)
+cargo run --release --bin happytest -- --directory ./data --file "BTCUSDT_202509.*\.jsonl" gpt
 
 # Custom parameters
 cargo run --release -- \
-  --file data/orderbook.jsonl \
+  --directory ./data \
+  --file orderbook.jsonl \
   --fill-rate 0.95 \
   --slippage-bps 1.0 \
   gpt \
@@ -100,12 +101,12 @@ RUSTFLAGS="-C target-cpu=apple-m1" cargo build --release
 
 ### Basic Backtest
 ```bash
-cargo run --release -- --file data/ETHUSDT.jsonl gpt
+cargo run --release -- --directory ./data --file ETHUSDT.jsonl gpt
 ```
 
 ### With Logging
 ```bash
-RUST_LOG=info cargo run --release -- --file data/BTC.parquet gpt
+RUST_LOG=info cargo run --release -- --directory ./data --file BTC.parquet gpt
 ```
 
 ### Custom Strategy Parameters

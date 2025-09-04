@@ -41,6 +41,10 @@ struct Args {
     #[arg(long, default_value_t = 0.05)]
     margin_rate: f64,
 
+    /// Treat regex-matched files as a single continuous range (for backtesting multiple periods)
+    #[arg(long, default_value_t = true)]
+    aggregate_files: bool,
+    
     /// Strategy selection and configuration
     #[command(subcommand)]
     strategy: StrategyCommand,
@@ -84,7 +88,7 @@ fn find_matching_files(directory: &Path, pattern: &str) -> Result<Vec<PathBuf>, 
 }
 
 /// Process a single file with the backtest engine
-fn process_file(
+fn process_single_file(
     file_path: &Path,
     args: &Args,
     backtest_config: &BacktestConfig,
@@ -165,6 +169,95 @@ fn process_file(
     Ok(())
 }
 
+/// Process multiple files as a continuous range
+fn process_files_as_range(
+    file_paths: &[PathBuf],
+    args: &Args,
+    backtest_config: &BacktestConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n{}", "=".repeat(60));
+    println!("Processing {} files as a continuous range", file_paths.len());
+    println!("{}", "=".repeat(60));
+    
+    // Extract symbol from first file (assuming all files are for the same symbol)
+    let first_file = &file_paths[0];
+    let filename = first_file
+        .file_name()
+        .ok_or("Invalid file path")?
+        .to_str()
+        .ok_or("Invalid filename encoding")?;
+    let symbol = extract_symbol_from_filename(filename);
+    
+    println!("Symbol: {}", symbol);
+    println!("Files to process:");
+    for (i, path) in file_paths.iter().enumerate() {
+        println!("  {}. {}", i + 1, path.display());
+    }
+
+    // Create strategy from command line arguments
+    let strategy = match &args.strategy {
+        StrategyCommand::Gpt(gpt_args) => {
+            gpt_args.build_strategy(symbol.clone())
+        }
+    };
+
+    // Create backtest engine
+    let engine = BacktestEngine::new(backtest_config.clone());
+
+    // Run backtest with multiple files as a single continuous data source
+    let trade_state = engine.run_backtest_with_multiple_files(file_paths, strategy)?;
+
+    // Create dashboard for analysis
+    let mut dashboard = TradeDashboard::new(
+        trade_state,
+        backtest_config.margin_rate,
+    );
+
+    // Calculate PnL
+    let pnl_results = dashboard.pnl(&symbol);
+
+    // Print diagnostic info
+    println!("\n=== DIAGNOSTIC INFO ===");
+    println!(
+        "Total trades: {}",
+        dashboard.trade_state.get_all_trades().len()
+    );
+    println!(
+        "Filled trades: {}",
+        dashboard.trade_state.get_trades_history().len()
+    );
+    if let Some(result) = pnl_results.get(&symbol) {
+        println!("Closed positions: {}", result.closed_trades.len());
+    }
+    println!("======================");
+
+    // Use PnlReport to display results in a nice table
+    let pnl_report = PnlReport::new();
+    let all_trades = dashboard.trade_state.get_all_trades();
+    let report = pnl_report.report(all_trades, Method::Fifo);
+    println!("{}", report);
+    
+    // Optionally generate P&L graphs
+    let output_name = format!("aggregated_{}_{}", 
+        symbol,
+        "graph"
+    );
+    pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
+
+    // Get capital metrics
+    let capital_metrics = dashboard.get_capital_metrics(&symbol);
+    let mut capital_metrics_map = HashMap::new();
+    capital_metrics_map.insert(symbol.clone(), capital_metrics);
+
+    // Print metrics to console
+    let _metrics_summary = dashboard.print_pnl_metrics(&symbol, &pnl_results);
+
+    log::info!("============================================================");
+    dashboard.to_console(&symbol, &pnl_results, &capital_metrics_map);
+    
+    Ok(())
+}
+
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
@@ -212,11 +305,19 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         matching_files
     };
 
-    // Process each file
-    for file_path in &files_to_process {
-        if let Err(e) = process_file(file_path, &args, &backtest_config) {
-            eprintln!("Error processing file {:?}: {}", file_path, e);
-            // Continue with next file instead of failing completely
+    // Process files based on aggregate_files flag
+    if args.aggregate_files && files_to_process.len() > 1 {
+        // Process all files as a single continuous range
+        if let Err(e) = process_files_as_range(&files_to_process, &args, &backtest_config) {
+            eprintln!("Error processing files as range: {}", e);
+        }
+    } else {
+        // Process each file individually
+        for file_path in &files_to_process {
+            if let Err(e) = process_single_file(file_path, &args, &backtest_config) {
+                eprintln!("Error processing file {:?}: {}", file_path, e);
+                // Continue with next file instead of failing completely
+            }
         }
     }
 

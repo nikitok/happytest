@@ -18,13 +18,19 @@ pub trait Processor {
 pub struct PnlReport {
     fifo_processor: FifoProcessor,
     position_processor: PositionProcessor,
+    commission_rate: f64,  // Commission rate as a percentage (e.g., 0.03 for 0.03%)
 }
 
 impl PnlReport {
     pub fn new() -> Self {
+        Self::with_commission(0.03)  // Default commission of 0.03%
+    }
+    
+    pub fn with_commission(commission_rate: f64) -> Self {
         Self {
             fifo_processor: FifoProcessor::new(),
             position_processor: PositionProcessor::new(),
+            commission_rate,
         }
     }
     
@@ -84,10 +90,11 @@ impl PnlReport {
         table.set_header(vec![
             "Symbol",
             "Trades",
-            "Realized P&L",
-            "Unrealized P&L",
-            "Remaining Shares",
-            "Total P&L"
+            "Gross P&L",
+            "Commission",
+            "Net P&L",
+            "Max Drawdown %",
+            "Sharpe Ratio",
         ]);
         
         // Sort symbols for consistent output
@@ -95,38 +102,62 @@ impl PnlReport {
         symbols.sort();
         
         let mut total_trades = 0;
-        let mut total_realized = 0.0;
-        let mut total_unrealized = 0.0;
-        let mut total_remaining = 0.0;
+        let mut total_gross_pnl = 0.0;
+        let mut total_commission = 0.0;
+        let mut total_net_pnl = 0.0;
+        let mut max_drawdown_sum = 0.0;
+        let mut sharpe_sum = 0.0;
+        let mut symbol_count = 0;
         
         // Process each symbol
         for symbol in symbols {
             if let Some(symbol_trades) = trades_by_symbol.get(&symbol) {
                 let result = self.calculate(symbol_trades, method);
-                let total_pnl = result.total_pnl + result.unrealized_pnl;
+                let gross_pnl = result.total_pnl + result.unrealized_pnl;
+                
+                // Calculate commission
+                let total_volume = symbol_trades.iter()
+                    .filter(|t| t.status.to_lowercase() == "filled")
+                    .map(|t| t.quantity * t.price)
+                    .sum::<f64>();
+                let commission = total_volume * (self.commission_rate / 100.0);
+                let net_pnl = gross_pnl - commission;
+                
+                // Calculate metrics
+                let (max_drawdown, sharpe_ratio) = self.calculate_metrics(symbol_trades, &result);
                 
                 table.add_row(vec![
                     symbol.clone(),
                     symbol_trades.len().to_string(),
-                    format!("${:.2}", result.total_pnl),
-                    format!("${:.2}", result.unrealized_pnl),
-                    format!("{:.0}", result.remaining_shares),
-                    format!("${:.2}", total_pnl),
+                    format!("${:.2}", gross_pnl),
+                    format!("${:.2}", commission),
+                    format!("${:.2}", net_pnl),
+                    format!("{:.2}%", max_drawdown),
+                    format!("{:.2}", sharpe_ratio),
                 ]);
                 
                 total_trades += symbol_trades.len();
-                total_realized += result.total_pnl;
-                total_unrealized += result.unrealized_pnl;
-                total_remaining += result.remaining_shares;
+                total_gross_pnl += gross_pnl;
+                total_commission += commission;
+                total_net_pnl += net_pnl;
+                
+                if !max_drawdown.is_nan() {
+                    max_drawdown_sum += max_drawdown;
+                    sharpe_sum += sharpe_ratio;
+                    symbol_count += 1;
+                }
             }
         }
         
-        let grand_total = total_realized + total_unrealized;
+        // Calculate averages for metrics
+        let avg_drawdown = if symbol_count > 0 { max_drawdown_sum / symbol_count as f64 } else { 0.0 };
+        let avg_sharpe = if symbol_count > 0 { sharpe_sum / symbol_count as f64 } else { 0.0 };
         
         // Add separator
         table.add_row(vec![
             "─────────".to_string(),
             "─────────".to_string(),
+            "─────────────".to_string(),
             "─────────────".to_string(),
             "─────────────".to_string(),
             "─────────────".to_string(),
@@ -137,10 +168,11 @@ impl PnlReport {
         table.add_row(vec![
             "TOTAL".to_string(),
             total_trades.to_string(),
-            format!("${:.2}", total_realized),
-            format!("${:.2}", total_unrealized),
-            format!("{:.0}", total_remaining),
-            format!("${:.2}", grand_total),
+            format!("${:.2}", total_gross_pnl),
+            format!("${:.2}", total_commission),
+            format!("${:.2}", total_net_pnl),
+            format!("{:.2}%", avg_drawdown),
+            format!("{:.2}", avg_sharpe),
         ]);
         
         format!("\n=== P&L Summary by Symbol ===\n{}", table)
@@ -671,6 +703,84 @@ impl PnlReport {
     /// Generate P&L graphs with default parameters (./data directory, pnl_ prefix)
     pub fn graph_default(&self, trades: &[Trade], method: Method) -> Result<(), Box<dyn std::error::Error>> {
         self.graph(trades, method, None, None)
+    }
+    
+    /// Calculate metrics including Max Drawdown and Sharpe Ratio
+    fn calculate_metrics(&self, trades: &[Trade], result: &PnLResult) -> (f64, f64) {
+        // Get filled trades sorted by timestamp
+        let mut filled_trades: Vec<&Trade> = trades.iter()
+            .filter(|t| t.status.to_lowercase() == "filled")
+            .collect();
+        filled_trades.sort_by_key(|t| t.time);
+        
+        if filled_trades.is_empty() {
+            return (0.0, 0.0);
+        }
+        
+        // Calculate cumulative P&L over time
+        let mut cumulative_pnl = vec![0.0];
+        let mut running_pnl = 0.0;
+        
+        for closed_trade in result.closed_trades.iter() {
+            running_pnl += closed_trade.pnl;
+            cumulative_pnl.push(running_pnl);
+        }
+        
+        // Calculate Max Drawdown
+        let mut max_drawdown_pct: f64 = 0.0;
+        if !cumulative_pnl.is_empty() {
+            let mut peak = cumulative_pnl[0];
+            for &pnl in &cumulative_pnl {
+                if pnl > peak {
+                    peak = pnl;
+                }
+                if peak > 0.0 {
+                    let drawdown = ((peak - pnl) / peak) * 100.0;
+                    max_drawdown_pct = max_drawdown_pct.max(drawdown);
+                }
+            }
+        }
+        
+        // Calculate Sharpe Ratio (annualized)
+        let sharpe_ratio = if cumulative_pnl.len() > 2 {
+            // Calculate returns between periods
+            let mut returns = Vec::new();
+            for i in 1..cumulative_pnl.len() {
+                if cumulative_pnl[i-1] != 0.0 {
+                    returns.push((cumulative_pnl[i] - cumulative_pnl[i-1]) / cumulative_pnl[i-1].abs());
+                } else if cumulative_pnl[i] != 0.0 {
+                    // Handle case where previous value is 0
+                    returns.push(if cumulative_pnl[i] > 0.0 { 1.0 } else { -1.0 });
+                }
+            }
+            
+            if !returns.is_empty() {
+                // Calculate mean return
+                let mean_return = returns.iter().sum::<f64>() / returns.len() as f64;
+                
+                // Calculate standard deviation
+                let variance = returns.iter()
+                    .map(|r| (r - mean_return).powi(2))
+                    .sum::<f64>() / returns.len() as f64;
+                let std_dev = variance.sqrt();
+                
+                // Calculate annualized Sharpe ratio
+                // Assuming daily returns and 252 trading days per year
+                if std_dev > 0.0 {
+                    let annualized_return = mean_return * (252.0_f64).sqrt();
+                    let annualized_std = std_dev * (252.0_f64).sqrt();
+                    annualized_return / annualized_std
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            }
+        } else {
+            0.0
+        };
+        
+        (max_drawdown_pct, sharpe_ratio)
     }
 }
 
