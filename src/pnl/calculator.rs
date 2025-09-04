@@ -705,6 +705,148 @@ impl PnlReport {
         self.graph(trades, method, None, None)
     }
     
+    /// Display P&L graph in console using ASCII/Unicode characters
+    pub fn display_console_graph(&self, trades: &[Trade], method: Method) -> Result<(), Box<dyn std::error::Error>> {
+        // Group trades by symbol
+        let mut trades_by_symbol: HashMap<String, Vec<Trade>> = HashMap::new();
+        
+        for trade in trades {
+            trades_by_symbol
+                .entry(trade.symbol.clone())
+                .or_default()
+                .push(trade.clone());
+        }
+        
+        // Process each symbol
+        for (symbol, symbol_trades) in trades_by_symbol.iter() {
+            let result = self.calculate(symbol_trades, method);
+            
+            // Get filled trades sorted by time
+            let mut filled_trades: Vec<&Trade> = symbol_trades.iter()
+                .filter(|t| t.status.to_lowercase() == "filled")
+                .collect();
+            filled_trades.sort_by_key(|t| t.time);
+            
+            if filled_trades.is_empty() {
+                continue;
+            }
+            
+            // Calculate cumulative P&L over time
+            let mut cumulative_pnl = Vec::new();
+            let mut running_pnl = 0.0;
+            
+            // Build cumulative P&L based on closed trades
+            for closed_trade in &result.closed_trades {
+                running_pnl += closed_trade.pnl;
+                cumulative_pnl.push(running_pnl);
+            }
+            
+            if cumulative_pnl.is_empty() {
+                println!("No P&L data to display for {}", symbol);
+                continue;
+            }
+            
+            // Create data points for the chart (index, pnl)
+            // Aggregate data if there are too many points for console display
+            let max_console_points = 100;
+            let data_points: Vec<(f32, f32)> = if cumulative_pnl.len() > max_console_points {
+                // Sample every nth point to reduce data
+                let step = cumulative_pnl.len() / max_console_points;
+                cumulative_pnl
+                    .iter()
+                    .enumerate()
+                    .step_by(step.max(1))
+                    .map(|(i, &pnl)| (i as f32, pnl as f32))
+                    .collect()
+            } else {
+                cumulative_pnl
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &pnl)| (i as f32, pnl as f32))
+                    .collect()
+            };
+            
+            // Calculate commission for net P&L
+            let total_volume = symbol_trades.iter()
+                .filter(|t| t.status.to_lowercase() == "filled")
+                .map(|t| t.quantity * t.price)
+                .sum::<f64>();
+            let commission = total_volume * (self.commission_rate / 100.0);
+            let net_pnl = running_pnl - commission;
+            
+            // Get min and max P&L for proper Y-axis range
+            let min_pnl = cumulative_pnl.iter().fold(f64::INFINITY, |a, &b| a.min(b)) as f32;
+            let max_pnl = cumulative_pnl.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b)) as f32;
+            let pnl_range = if (max_pnl - min_pnl).abs() < 1.0 {
+                100.0
+            } else {
+                max_pnl - min_pnl
+            };
+            let y_min = min_pnl - pnl_range * 0.1;
+            let y_max = max_pnl + pnl_range * 0.1;
+            
+            // Create the console chart
+            println!("\n{}", "=".repeat(80));
+            println!("P&L Chart for {} (Console View)", symbol);
+            println!("{}", "=".repeat(80));
+            
+            // Display a simple ASCII chart
+            if !data_points.is_empty() && data_points.len() > 1 {
+                println!("\nP&L Progression ({} closed trades):", cumulative_pnl.len());
+                
+                // Create a simple bar chart using ASCII
+                let chart_height = 15;
+                let chart_width = 60;
+                
+                // Sample data points for display
+                let samples = chart_width.min(data_points.len());
+                let step = data_points.len() / samples;
+                
+                // Find min/max for scaling
+                let min_val = data_points.iter().map(|(_, y)| *y).fold(f32::INFINITY, f32::min);
+                let max_val = data_points.iter().map(|(_, y)| *y).fold(f32::NEG_INFINITY, f32::max);
+                let range = max_val - min_val;
+                
+                // Print the chart
+                println!("\n  ${:.0} ┤", max_val);
+                
+                for row in 0..chart_height {
+                    print!("       │");
+                    let threshold = max_val - (row as f32 * range / chart_height as f32);
+                    
+                    for col in 0..samples {
+                        let idx = col * step;
+                        if idx < data_points.len() {
+                            let val = data_points[idx].1;
+                            if val >= threshold - (range / chart_height as f32 / 2.0) {
+                                print!("█");
+                            } else {
+                                print!(" ");
+                            }
+                        }
+                    }
+                    println!();
+                }
+                
+                println!("  ${:.0} └{}", min_val, "─".repeat(chart_width));
+                println!("       0{}{}", " ".repeat(chart_width / 2 - 1), cumulative_pnl.len());
+                println!("                        Trade Count");
+            } else {
+                println!("[Insufficient data points for chart]");
+            }
+            
+            println!("\n{}", "-".repeat(80));
+            println!("Summary:");
+            println!("  Total Trades: {}", filled_trades.len());
+            println!("  Gross P&L: ${:.2}", running_pnl);
+            println!("  Commission ({}%): ${:.2}", self.commission_rate, commission);
+            println!("  Net P&L: ${:.2}", net_pnl);
+            println!("{}", "=".repeat(80));
+        }
+        
+        Ok(())
+    }
+    
     /// Calculate metrics including Max Drawdown and Sharpe Ratio
     fn calculate_metrics(&self, trades: &[Trade], result: &PnLResult) -> (f64, f64) {
         // Get filled trades sorted by timestamp

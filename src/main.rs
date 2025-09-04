@@ -148,12 +148,15 @@ fn process_single_file(
     let report = pnl_report.report(all_trades, Method::Fifo);
     println!("{}", report);
     
-    // Optionally generate P&L graphs
+    // Generate P&L graphs (PNG files)
     let output_name = format!("{}_{}", 
         file_path.file_stem().unwrap_or_default().to_str().unwrap_or("output"),
         "graph"
     );
     pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
+    
+    // Display P&L graph in console
+    pnl_report.display_console_graph(all_trades, Method::Fifo)?;
 
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);
@@ -237,12 +240,15 @@ fn process_files_as_range(
     let report = pnl_report.report(all_trades, Method::Fifo);
     println!("{}", report);
     
-    // Optionally generate P&L graphs
+    // Generate P&L graphs (PNG files)
     let output_name = format!("aggregated_{}_{}", 
         symbol,
         "graph"
     );
     pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
+    
+    // Display P&L graph in console
+    pnl_report.display_console_graph(all_trades, Method::Fifo)?;
 
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);
