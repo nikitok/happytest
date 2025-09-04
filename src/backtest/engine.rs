@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 use log::{info, warn};
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::core::{TradeState, Result, TradeError};
 use crate::utils::{FileDataSource, ParquetDataSource, extract_symbol_from_filename, MultiFileDataSource};
@@ -153,6 +154,17 @@ impl BacktestEngine {
         
         info!("Running backtest for {} with {} orderbook messages", symbol, total_messages);
         
+        // Create progress bar
+        let pb = ProgressBar::new(total_messages as u64);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta}) {msg}")
+                .unwrap()
+                .progress_chars("██░")
+        );
+        pb.set_message(format!("Analyzing {} orderbook", symbol));
+        pb.enable_steady_tick(std::time::Duration::from_millis(100));
+        
         let mut processed = 0;
         
         // Process each orderbook
@@ -175,7 +187,10 @@ impl BacktestEngine {
             }
             
             processed += 1;
+            pb.set_position(processed as u64);
         }
+        
+        pb.finish_with_message(format!("✅ Analyzed {} orderbook messages in {:.2}s", processed, start_time.elapsed().as_secs_f64()));
         
         let execution_time = start_time.elapsed();
         info!("Backtest completed in {:.2} seconds ({} messages processed)", 
@@ -226,6 +241,17 @@ impl BacktestEngine {
         info!("Running backtest for {} with {} total orderbook messages across {} files", 
               symbol, total_messages, file_paths.len());
         
+        // Create progress bar for multiple files
+        let pb = ProgressBar::new(total_messages as u64);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta}) {msg}")
+                .unwrap()
+                .progress_chars("██░")
+        );
+        pb.set_message(format!("Analyzing {} files for {}", file_paths.len(), symbol));
+        pb.enable_steady_tick(std::time::Duration::from_millis(100));
+        
         let mut processed = 0;
         
         // Process each orderbook
@@ -248,7 +274,10 @@ impl BacktestEngine {
             }
             
             processed += 1;
+            pb.set_position(processed as u64);
         }
+        
+        pb.finish_with_message(format!("✅ Analyzed {} messages from {} files in {:.2}s", processed, file_paths.len(), start_time.elapsed().as_secs_f64()));
         
         let execution_time = start_time.elapsed();
         info!("Backtest completed in {:.2} seconds ({} messages processed from {} files)", 

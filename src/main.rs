@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use std::fs;
 use regex::Regex;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use happytest::{
     utils::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
@@ -97,6 +98,17 @@ fn process_single_file(
     println!("Processing file: {:?}", file_path);
     println!("{}", "=".repeat(60));
     
+    // Show initialization spinner
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.cyan} {msg}")
+            .unwrap()
+            .tick_strings(&["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈", "·"])
+    );
+    spinner.set_message("⚙️  Initializing strategy and loading data...");
+    spinner.enable_steady_tick(std::time::Duration::from_millis(80));
+    
     // Extract symbol for strategy creation
     let filename = file_path
         .file_name()
@@ -114,6 +126,8 @@ fn process_single_file(
 
     // Create backtest engine
     let engine = BacktestEngine::new(backtest_config.clone());
+    
+    spinner.finish_with_message("✅ Strategy initialized");
 
     // Run backtest with the constructed strategy
     let trade_state = engine.run_backtest_with_custom_strategy(file_path, strategy)?;
@@ -182,6 +196,17 @@ fn process_files_as_range(
     println!("Processing {} files as a continuous range", file_paths.len());
     println!("{}", "=".repeat(60));
     
+    // Show initialization spinner
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.cyan} {msg}")
+            .unwrap()
+            .tick_strings(&["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈", "·"])
+    );
+    spinner.set_message(format!("⚙️  Initializing strategy and loading {} files...", file_paths.len()));
+    spinner.enable_steady_tick(std::time::Duration::from_millis(80));
+    
     // Extract symbol from first file (assuming all files are for the same symbol)
     let first_file = &file_paths[0];
     let filename = first_file
@@ -206,6 +231,8 @@ fn process_files_as_range(
 
     // Create backtest engine
     let engine = BacktestEngine::new(backtest_config.clone());
+    
+    spinner.finish_with_message(format!("✅ Strategy initialized, {} files ready", file_paths.len()));
 
     // Run backtest with multiple files as a single continuous data source
     let trade_state = engine.run_backtest_with_multiple_files(file_paths, strategy)?;
@@ -241,12 +268,12 @@ fn process_files_as_range(
     println!("{}", report);
     
     // Generate P&L graphs (PNG files)
-    let output_name = format!("aggregated_{}_{}", 
-        symbol,
-        "graph"
-    );
-    pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
-    
+    // let output_name = format!("aggregated_{}_{}",
+    //     symbol,
+    //     "graph"
+    // );
+    // pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
+    //
     // Display P&L graph in console
     pnl_report.display_console_graph(all_trades, Method::Fifo)?;
 
