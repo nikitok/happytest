@@ -111,3 +111,27 @@ impl GptMarketMakerArgs {
         Box::new(GptMarketMaker::new(symbol, config))
     }
 }
+
+/// Command line arguments for Simple Market Maker strategy
+#[derive(Debug, Clone, Args)]
+pub struct SimpleMarketMakerArgs {
+    /// Fixed order size for each trade
+    #[arg(long, default_value_t = 0.01)]
+    pub order_size: f64,
+
+    /// Spread in basis points from mid price
+    #[arg(long, default_value_t = 10.0)]
+    pub spread_bps: f64,
+}
+
+impl SimpleMarketMakerArgs {
+    pub fn build_strategy(&self, symbol: String) -> Box<dyn Strategy> {
+        use crate::strategy::SimpleMarketMaker;
+        
+        Box::new(SimpleMarketMaker::new(
+            symbol,
+            self.order_size,
+            self.spread_bps,
+        ))
+    }
+}

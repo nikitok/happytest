@@ -64,6 +64,8 @@ struct Args {
 enum StrategyCommand {
     /// GPT Market Maker strategy
     Gpt(happytest::strategy::GptMarketMakerArgs),
+    /// Simple Market Maker strategy
+    Simple(happytest::strategy::SimpleMarketMakerArgs),
 }
 
 /// Find files matching a regex pattern in a directory
@@ -130,6 +132,9 @@ fn process_single_file(
     let strategy = match &args.strategy {
         StrategyCommand::Gpt(gpt_args) => {
             gpt_args.build_strategy(symbol.clone())
+        }
+        StrategyCommand::Simple(simple_args) => {
+            simple_args.build_strategy(symbol.clone())
         }
     };
 
@@ -241,6 +246,9 @@ fn process_files_as_range(
     let strategy = match &args.strategy {
         StrategyCommand::Gpt(gpt_args) => {
             gpt_args.build_strategy(symbol.clone())
+        }
+        StrategyCommand::Simple(simple_args) => {
+            simple_args.build_strategy(symbol.clone())
         }
     };
 
@@ -403,6 +411,9 @@ fn process_files_parallel(
             let strategy = match &args.strategy {
                 StrategyCommand::Gpt(gpt_args) => {
                     gpt_args.build_strategy(symbol.clone())
+                }
+                StrategyCommand::Simple(simple_args) => {
+                    simple_args.build_strategy(symbol.clone())
                 }
             };
             
