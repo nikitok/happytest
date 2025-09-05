@@ -34,14 +34,16 @@ impl Trade {
 
 #[derive(Debug, Clone)]
 pub struct OrderBook {
+    pub symbol: String,
     pub bids: Vec<(f64, f64)>, // (price, quantity)
     pub asks: Vec<(f64, f64)>, // (price, quantity)
     pub current_time: i64,
 }
 
 impl OrderBook {
-    pub fn new(bids: Vec<(f64, f64)>, asks: Vec<(f64, f64)>, current_time: i64) -> Self {
+    pub fn new(symbol: String, bids: Vec<(f64, f64)>, asks: Vec<(f64, f64)>, current_time: i64) -> Self {
         Self {
+            symbol,
             bids,
             asks,
             current_time,
@@ -103,7 +105,7 @@ pub struct ClosedTrade {
     pub pnl: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PnLResult {
     pub total_pnl: f64,
     pub unrealized_pnl: f64,

@@ -11,6 +11,7 @@ use crate::core::{OrderBook, errors::{Result, TradeError}, traits::DataSource};
 /// Parquet-based data source for order book messages
 pub struct ParquetDataSource {
     file_path: PathBuf,
+    symbol: String,
     current_batch: Option<RecordBatch>,
     current_row: usize,
     batch_reader: Option<parquet::arrow::arrow_reader::ParquetRecordBatchReader>,
@@ -26,8 +27,16 @@ impl ParquetDataSource {
             ));
         }
         
+        // Extract symbol from filename
+        let symbol = path.file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|n| n.split('_').next())
+            .unwrap_or("UNKNOWN")
+            .to_string();
+        
         Ok(Self {
             file_path: path,
+            symbol,
             current_batch: None,
             current_row: 0,
             batch_reader: None,
@@ -163,7 +172,7 @@ impl ParquetDataSource {
             }
         }
         
-        Ok(OrderBook::new(bids, asks, ts))
+        Ok(OrderBook::new(self.symbol.clone(), bids, asks, ts))
     }
     
     /// Count total messages (rows) in the file

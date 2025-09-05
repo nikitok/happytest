@@ -705,6 +705,19 @@ impl PnlReport {
         self.graph(trades, method, None, None)
     }
     
+    /// Format number in compact form (e.g., 1234 -> 1.2k)
+    fn format_value_compact(value: f64) -> String {
+        let abs_value = value.abs();
+        let formatted = if abs_value >= 1_000_000.0 {
+            format!("{:.1}M", value / 1_000_000.0)
+        } else if abs_value >= 1_000.0 {
+            format!("{:.1}k", value / 1_000.0)
+        } else {
+            format!("{:.0}", value)
+        };
+        formatted
+    }
+    
     /// Display P&L graph in console using ASCII/Unicode characters
     pub fn display_console_graph(&self, trades: &[Trade], method: Method) -> Result<(), Box<dyn std::error::Error>> {
         // Group trades by symbol
@@ -774,6 +787,9 @@ impl PnlReport {
             let commission = total_volume * (self.commission_rate / 100.0);
             let net_pnl = running_pnl - commission;
             
+            // Calculate Max Drawdown
+            let (max_dd_pct, max_dd_value) = self.calculate_max_drawdown(&cumulative_pnl);
+            
             // Get min and max P&L for proper Y-axis range
             let min_pnl = cumulative_pnl.iter().fold(f64::INFINITY, |a, &b| a.min(b)) as f32;
             let max_pnl = cumulative_pnl.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b)) as f32;
@@ -790,9 +806,19 @@ impl PnlReport {
             println!("P&L Chart for {} (Console View)", symbol);
             println!("{}", "=".repeat(80));
             
+            // Calculate time duration from filled trades
+            let time_duration_minutes = if !filled_trades.is_empty() {
+                let first_time = filled_trades.first().map(|t| t.time).unwrap_or(0);
+                let last_time = filled_trades.last().map(|t| t.time).unwrap_or(0);
+                (last_time - first_time) / 60_000 // Convert ms to minutes
+            } else {
+                0
+            };
+            
             // Display a simple ASCII chart
             if !data_points.is_empty() && data_points.len() > 1 {
-                println!("\nP&L Progression ({} closed trades):", cumulative_pnl.len());
+                println!("\nP&L Progression ({} closed trades, {} min):", 
+                    cumulative_pnl.len(), time_duration_minutes);
                 
                 // Create a simple bar chart using ASCII
                 let chart_height = 15;
@@ -807,11 +833,18 @@ impl PnlReport {
                 let max_val = data_points.iter().map(|(_, y)| *y).fold(f32::NEG_INFINITY, f32::max);
                 let range = max_val - min_val;
                 
-                // Print the chart
-                println!("\n  ${:.0} ┤", max_val);
+                // Print the chart with formatted Y-axis
+                let max_label = Self::format_value_compact(max_val as f64);
+                let min_label = Self::format_value_compact(min_val as f64);
+                
+                // Calculate the maximum label width for proper alignment
+                let max_label_width = max_label.len().max(min_label.len()).max(6);
+                
+                // Print top Y-axis label
+                println!("\n{:>width$} ┤", format!("${}", max_label), width = max_label_width + 2);
                 
                 for row in 0..chart_height {
-                    print!("       │");
+                    print!("{:width$} │", "", width = max_label_width + 2);
                     let threshold = max_val - (row as f32 * range / chart_height as f32);
                     
                     for col in 0..samples {
@@ -828,9 +861,17 @@ impl PnlReport {
                     println!();
                 }
                 
-                println!("  ${:.0} └{}", min_val, "─".repeat(chart_width));
-                println!("       0{}{}", " ".repeat(chart_width / 2 - 1), cumulative_pnl.len());
-                println!("                        Trade Count");
+                // Print bottom Y-axis label
+                println!("{:>width$} └{}", format!("${}", min_label), "─".repeat(chart_width), width = max_label_width + 2);
+                
+                // X-axis labels with trades and time
+                let spaces = chart_width.saturating_sub(cumulative_pnl.len().to_string().len()) - 1;
+                
+                println!("{:width$} 0{}{}", "", " ".repeat(spaces), cumulative_pnl.len(), width = max_label_width + 2);
+                println!("{:width$} │{}│", "", " ".repeat(chart_width - 2), width = max_label_width + 2);
+                let time_spaces = spaces.saturating_sub(time_duration_minutes.to_string().len() + 6);
+                println!("{:width$}(0 min){}({} min)", "", " ".repeat(time_spaces), time_duration_minutes, width = max_label_width - 1);
+                println!("\n                     Trades / Time");
             } else {
                 println!("[Insufficient data points for chart]");
             }
@@ -841,6 +882,7 @@ impl PnlReport {
             println!("  Gross P&L: ${:.2}", running_pnl);
             println!("  Commission ({}%): ${:.2}", self.commission_rate, commission);
             println!("  Net P&L: ${:.2}", net_pnl);
+            println!("  Max Drawdown: ${:.2} ({:.2}%)", max_dd_value, max_dd_pct);
             println!("{}", "=".repeat(80));
         }
         
@@ -923,6 +965,32 @@ impl PnlReport {
         };
         
         (max_drawdown_pct, sharpe_ratio)
+    }
+    
+    /// Calculate maximum drawdown from cumulative P&L series
+    fn calculate_max_drawdown(&self, cumulative_pnl: &[f64]) -> (f64, f64) {
+        if cumulative_pnl.is_empty() {
+            return (0.0, 0.0);
+        }
+        
+        let mut max_drawdown_pct = 0.0;
+        let mut max_drawdown_value = 0.0;
+        let mut peak = cumulative_pnl[0];
+        
+        for &pnl in cumulative_pnl {
+            if pnl > peak {
+                peak = pnl;
+            }
+            let drawdown_value = peak - pnl;
+            if drawdown_value > max_drawdown_value {
+                max_drawdown_value = drawdown_value;
+                if peak > 0.0 {
+                    max_drawdown_pct = (drawdown_value / peak) * 100.0;
+                }
+            }
+        }
+        
+        (max_drawdown_pct, max_drawdown_value)
     }
 }
 

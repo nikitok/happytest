@@ -34,6 +34,7 @@ pub struct OrderBookMessageV2 {
 /// File-based data source for order book messages
 pub struct FileDataSource {
     file_path: PathBuf,
+    symbol: String,
     reader: Option<BufReader<File>>,
     buffer: Vec<String>,
     current_index: usize,
@@ -50,8 +51,16 @@ impl FileDataSource {
             ));
         }
         
+        // Extract symbol from filename
+        let symbol = path.file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|n| n.split('_').next())
+            .unwrap_or("UNKNOWN")
+            .to_string();
+        
         Ok(Self {
             file_path: path,
+            symbol,
             reader: None,
             buffer: Vec::new(),
             current_index: 0,
@@ -103,7 +112,7 @@ impl FileDataSource {
     }
     
     /// Parse a message into an OrderBook
-    fn parse_message(message: &OrderBookMessage) -> Result<OrderBook> {
+    fn parse_message(&self, message: &OrderBookMessage) -> Result<OrderBook> {
         let mut bids = Vec::new();
         for bid in &message.data.b {
             if bid.len() >= 2 {
@@ -134,7 +143,7 @@ impl FileDataSource {
             }
         }
         
-        Ok(OrderBook::new(bids, asks, message.ts))
+        Ok(OrderBook::new(self.symbol.clone(), bids, asks, message.ts))
     }
     
     /// Parse a V2 format message into an OrderBook
@@ -169,7 +178,7 @@ impl FileDataSource {
             }
         }
         
-        Ok(OrderBook::new(bids, asks, message.timestamp))
+        Ok(OrderBook::new(message.symbol.clone(), bids, asks, message.timestamp))
     }
     
     /// Pre-count total messages in the file (optional, for progress tracking)
@@ -210,7 +219,7 @@ impl DataSource for FileDataSource {
             } else {
                 // Fall back to V1 format (older format)
                 let message: OrderBookMessage = serde_json::from_str(line)?;
-                let orderbook = Self::parse_message(&message)?;
+                let orderbook = self.parse_message(&message)?;
                 Ok(Some(orderbook))
             }
         } else {

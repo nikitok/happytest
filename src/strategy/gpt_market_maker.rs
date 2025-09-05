@@ -337,7 +337,7 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                self.symbol.clone(),
+                order_book.symbol.clone(),
                 side.to_string(),
                 limit_price,
                 quantity,
@@ -372,7 +372,7 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                self.symbol.clone(),
+                order_book.symbol.clone(),
                 "Buy".to_string(),
                 limit_price,
                 self.config.fix_order_volume,
@@ -394,7 +394,7 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                self.symbol.clone(),
+                order_book.symbol.clone(),
                 "Sell".to_string(),
                 limit_price,
                 self.config.fix_order_volume,
@@ -479,12 +479,10 @@ impl Strategy for GptMarketMaker {
         self.update_position(trade, filled)
     }
     
-    fn get_position(&self, symbol: &str) -> f64 {
-        if self.symbol == symbol {
-            self.net_inventory
-        } else {
-            0.0
-        }
+    fn get_position(&self, _symbol: &str) -> f64 {
+        // Return the net inventory regardless of symbol
+        // since we're now handling multiple symbols
+        self.net_inventory
     }
     
     fn reset(&mut self) {
