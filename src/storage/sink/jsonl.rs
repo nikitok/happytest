@@ -1,4 +1,6 @@
-use super::writer::{StorageWriter, WriterConfig};
+//! JSONL (newline-delimited JSON) writer implementation.
+
+use super::base::{StorageWriter, WriterConfig};
 use crate::reader::models::OrderbookData;
 use anyhow::{Context, Result};
 use std::fs::{File, OpenOptions};
@@ -19,7 +21,7 @@ impl JsonlWriter {
             config: WriterConfig::default(),
         }
     }
-    
+
     /// Write buffered data to JSONL file
     fn flush_buffer(&mut self) -> Result<()> {
         if !self.buffer.is_empty() {
@@ -42,7 +44,7 @@ impl JsonlWriter {
 impl StorageWriter for JsonlWriter {
     fn init(&mut self, config: WriterConfig) -> Result<()> {
         self.config = config;
-        
+
         let filename = format!("{}.jsonl", self.config.base_filename);
         let path = std::path::Path::new(&filename);
         let absolute_path = if path.is_absolute() {
@@ -53,49 +55,49 @@ impl StorageWriter for JsonlWriter {
                 .join(path)
         };
         log::info!("Creating JSONL output file: {}", absolute_path.display());
-        
+
         let file = OpenOptions::new()
             .create(true)
             .write(true)
             .append(true)
             .open(&filename)
             .context("Failed to create JSONL output file")?;
-        
+
         self.writer = Some(BufWriter::new(file));
         Ok(())
     }
-    
+
     fn write(&mut self, data: &OrderbookData) -> Result<()> {
         self.buffer.push(data.clone());
-        
+
         // Write batch when buffer is full
         if self.buffer.len() >= self.config.buffer_size {
             self.flush_buffer()?;
         }
-        
+
         Ok(())
     }
-    
+
     fn write_batch(&mut self, batch: &[OrderbookData]) -> Result<()> {
         // Add batch to buffer
         self.buffer.extend_from_slice(batch);
-        
+
         // Write if buffer is full or force write if batch is large
         if self.buffer.len() >= self.config.buffer_size || batch.len() >= self.config.buffer_size {
             self.flush_buffer()?;
         }
-        
+
         Ok(())
     }
-    
+
     fn flush(&mut self) -> Result<()> {
         self.flush_buffer()
     }
-    
+
     fn close(&mut self) -> Result<()> {
         // Write any remaining buffered data
         self.flush_buffer()?;
-        
+
         // Close the JSONL writer
         if let Some(mut writer) = self.writer.take() {
             writer.flush().context("Failed to flush JSONL writer on close")?;
@@ -112,7 +114,7 @@ impl StorageWriter for JsonlWriter {
         }
         Ok(())
     }
-    
+
     fn file_extension(&self) -> &'static str {
         "jsonl"
     }

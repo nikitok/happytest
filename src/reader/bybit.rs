@@ -10,7 +10,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 // Import models and storage
 use super::models::{OrderbookData, WsRequest, WsResponse};
-use super::storage::{JsonlWriter, ParquetWriter, StorageWriter, WriterConfig};
+use crate::storage::{JsonlWriter, ParquetWriter, StorageWriter, WriterConfig};
 
 /// Configuration for the Bybit reader
 #[derive(Debug, Clone)]

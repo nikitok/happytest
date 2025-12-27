@@ -1,4 +1,6 @@
-use super::writer::{StorageWriter, WriterConfig};
+//! Parquet writer implementation using Arrow arrays.
+
+use super::base::{StorageWriter, WriterConfig};
 use crate::reader::models::OrderbookData;
 use anyhow::{Context, Result};
 use serde_json;
@@ -27,7 +29,7 @@ impl ParquetWriter {
             config: WriterConfig::default(),
         }
     }
-    
+
     /// Create the schema for Parquet file
     fn create_schema() -> Schema {
         Schema::new(vec![
@@ -39,7 +41,7 @@ impl ParquetWriter {
             Field::new("fetch_time", DataType::Int64, false),
         ])
     }
-    
+
     /// Convert buffered data to Arrow arrays
     fn convert_to_arrow_batch(records: &[OrderbookData]) -> Result<RecordBatch> {
         let mut symbol_builder = StringBuilder::new();
@@ -51,16 +53,16 @@ impl ParquetWriter {
 
         for record in records {
             symbol_builder.append_value(&record.symbol);
-            
+
             // Serialize bids and asks as JSON strings
             let bids_json = serde_json::to_string(&record.bids)
                 .context("Failed to serialize bids")?;
             let asks_json = serde_json::to_string(&record.asks)
                 .context("Failed to serialize asks")?;
-            
+
             bids_builder.append_value(&bids_json);
             asks_builder.append_value(&asks_json);
-            
+
             timestamp_builder.append_value(record.timestamp);
             update_id_builder.append_value(record.update_id);
             fetch_time_builder.append_value(record.fetch_time);
@@ -78,7 +80,7 @@ impl ParquetWriter {
         let schema = Arc::new(Self::create_schema());
         RecordBatch::try_new(schema, arrays).context("Failed to create record batch")
     }
-    
+
     /// Write buffered data to Parquet file
     fn flush_buffer(&mut self) -> Result<()> {
         if !self.buffer.is_empty() {
@@ -96,7 +98,7 @@ impl ParquetWriter {
 impl StorageWriter for ParquetWriter {
     fn init(&mut self, config: WriterConfig) -> Result<()> {
         self.config = config;
-        
+
         let filename = format!("{}.parquet", self.config.base_filename);
         let path = std::path::Path::new(&filename);
         let absolute_path = if path.is_absolute() {
@@ -107,54 +109,54 @@ impl StorageWriter for ParquetWriter {
                 .join(path)
         };
         log::info!("Creating Parquet output file: {}", absolute_path.display());
-        
+
         let file = File::create(&filename)
             .context("Failed to create Parquet output file")?;
-        
+
         let schema = Arc::new(Self::create_schema());
         let props = WriterProperties::builder()
             .set_compression(parquet::basic::Compression::SNAPPY)
             .build();
-        
+
         self.writer = Some(
             ArrowWriter::try_new(file, schema, Some(props))
                 .context("Failed to create Parquet writer")?
         );
-        
+
         Ok(())
     }
-    
+
     fn write(&mut self, data: &OrderbookData) -> Result<()> {
         self.buffer.push(data.clone());
-        
+
         // Write batch when buffer is full
         if self.buffer.len() >= self.config.buffer_size {
             self.flush_buffer()?;
         }
-        
+
         Ok(())
     }
-    
+
     fn write_batch(&mut self, batch: &[OrderbookData]) -> Result<()> {
         // Add batch to buffer
         self.buffer.extend_from_slice(batch);
-        
+
         // Write if buffer is full or force write if batch is large
         if self.buffer.len() >= self.config.buffer_size || batch.len() >= self.config.buffer_size {
             self.flush_buffer()?;
         }
-        
+
         Ok(())
     }
-    
+
     fn flush(&mut self) -> Result<()> {
         self.flush_buffer()
     }
-    
+
     fn close(&mut self) -> Result<()> {
         // Write any remaining buffered data
         self.flush_buffer()?;
-        
+
         // Close the Parquet writer
         if let Some(writer) = self.writer.take() {
             writer.close().context("Failed to close Parquet writer")?;
@@ -169,10 +171,10 @@ impl StorageWriter for ParquetWriter {
             };
             log::info!("Parquet file saved: {}", absolute_path.display());
         }
-        
+
         Ok(())
     }
-    
+
     fn file_extension(&self) -> &'static str {
         "parquet"
     }
