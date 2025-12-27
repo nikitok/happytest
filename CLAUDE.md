@@ -86,7 +86,9 @@ OrderBook Data → DataSource trait → BacktestEngine → Strategy.propose_trad
 - **`pnl/`** - P&L calculation with FIFO/Position methods, commission handling
 - **`trading/`** - Execution simulation, position tracking, metrics
 - **`reader/`** - Bybit WebSocket data collection, Parquet/JSONL writers
-- **`utils/`** - Data loaders, file source implementations
+- **`storage/`** - Data storage abstraction:
+  - `source/` - Data reading: `FileDataSource`, `ParquetDataSource`
+- **`utils/`** - (Deprecated) Legacy data loaders, use `storage/` instead
 - **`config/`** - Configuration defaults and validation
 
 ### Adding a New Strategy

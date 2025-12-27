@@ -1,9 +1,10 @@
 pub mod core;
 pub mod domain;
 pub mod exchange;
+pub mod storage;
 pub mod strategy;
 pub mod backtest;
-pub mod utils;
+pub mod utils;  // Deprecated: use storage instead
 pub mod trading;
 pub mod config;
 pub mod pnl;
