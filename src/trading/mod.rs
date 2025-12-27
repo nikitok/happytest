@@ -1,5 +1,6 @@
 pub mod executor;
-pub mod metrics;
 
 pub use executor::{TradeEmitter, BacktestTradeEmitter, BacktestConfig};
-pub use metrics::{TradingMetrics, MetricsCalculator};
+
+// Re-export metrics from analytics for backwards compatibility
+pub use crate::analytics::{TradingMetrics, MetricsCalculator};

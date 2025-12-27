@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::core::{Trade, ClosedTrade, PnLResult};
-use crate::pnl::models::Record;
+use super::models::Record;
 
 /// FIFO (First-In-First-Out) processor
 pub struct FifoProcessor;

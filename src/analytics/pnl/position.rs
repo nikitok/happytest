@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::core::{Trade, ClosedTrade, PnLResult};
-use crate::pnl::models::{Record, PositionInfo};
+use super::models::{Record, PositionInfo};
 
 /// Position-based processor
 pub struct PositionProcessor;

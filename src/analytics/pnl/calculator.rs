@@ -1,5 +1,5 @@
 use crate::core::{Trade, PnLResult};
-use crate::pnl::{
+use super::{
     models::Method,
     fifo::FifoProcessor,
     position::PositionProcessor,

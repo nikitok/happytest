@@ -8,7 +8,7 @@ use regex::Regex;
 
 use happytest::{
     utils::extract_symbol_from_filename, BacktestConfig, BacktestEngine, TradeDashboard,
-    pnl::{PnlReport, Method},
+    analytics::{PnlReport, Method},
 };
 
 #[derive(Parser, Debug)]

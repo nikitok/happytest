@@ -7,7 +7,7 @@ pub mod backtest;
 pub mod utils;  // Deprecated: use storage instead
 pub mod trading;
 pub mod config;
-pub mod pnl;
+pub mod analytics;
 pub mod reader;
 
 // Re-export commonly used types

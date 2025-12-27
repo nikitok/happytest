@@ -1,5 +1,5 @@
 use crate::core::Trade;
-use crate::pnl::{Method, PnlReport};
+use crate::analytics::pnl::{Method, PnlReport};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;

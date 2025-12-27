@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::core::Trade;
-    use crate::pnl::{PnlReport, Method};
+    use crate::analytics::pnl::{PnlReport, Method};
     use uuid::Uuid;
     
     fn create_test_trade(
