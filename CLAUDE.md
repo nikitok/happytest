@@ -13,7 +13,7 @@ High-frequency trading backtest engine written in Rust. Supports market-making s
 ```bash
 cargo build --release          # Build optimized binaries
 cargo test                     # Run all tests
-cargo test pnl::tests          # Run specific test module
+cargo test analytics::pnl::tests  # Run specific test module
 cargo check                    # Fast syntax/type check
 cargo clippy                   # Linting
 cargo fmt                      # Format code
@@ -63,7 +63,7 @@ OrderBook Data → DataSource trait → BacktestEngine → Strategy.propose_trad
 - `propose_trade(&OrderBook) -> Option<Trade>` - Generate trade signals
 - `update_position(&Trade, filled: bool)` - Track position state
 
-**`TradeEmitter` trait** (`src/trading/executor.rs`): Trade execution simulation with fill rates, slippage, and rejections.
+**`TradeEmitter` trait** (`src/backtest/executor.rs`): Trade execution simulation with fill rates, slippage, and rejections.
 
 **Technical Indicators** (`src/domain/indicator/`): Reusable components for strategies:
 - `Vwap` - Volume Weighted Average Price with sliding window
@@ -82,12 +82,20 @@ OrderBook Data → DataSource trait → BacktestEngine → Strategy.propose_trad
   - `indicator/` - Reusable indicators: `Vwap`, `VolatilityDetector`, `MomentumDetector`, `OrderBookImbalance`
   - `model/` - Unified domain models: `Position`, `Side`
 - **`strategy/`** - Trading strategies (GPT market maker, Simple market maker)
-- **`backtest/`** - `BacktestEngine` orchestration, `TradeDashboard` analytics
-- **`pnl/`** - P&L calculation with FIFO/Position methods, commission handling
-- **`trading/`** - Execution simulation, position tracking, metrics
-- **`reader/`** - Bybit WebSocket data collection, Parquet/JSONL writers
+- **`backtest/`** - Backtesting framework:
+  - `engine.rs` - `BacktestEngine` orchestration
+  - `trade_dashboard.rs` - `TradeDashboard` analytics
+  - `executor.rs` - `TradeEmitter` execution simulation with fill rates, slippage
+- **`analytics/`** - Analysis and reporting:
+  - `pnl/` - P&L calculation with FIFO/Position methods, commission handling
+  - `metrics.rs` - Trading metrics: Sharpe ratio, drawdown, win rate
+- **`exchange/`** - Exchange connectivity:
+  - `bybit/` - Bybit WebSocket reader, models
+  - `connector.rs` - `ExchangeConnector` trait
 - **`storage/`** - Data storage abstraction:
   - `source/` - Data reading: `FileDataSource`, `ParquetDataSource`
+  - `sink/` - Data writing: `JsonlWriter`, `ParquetWriter`
+- **`reader/`** - Reader binary support, data models
 - **`utils/`** - (Deprecated) Legacy data loaders, use `storage/` instead
 - **`config/`** - Configuration defaults and validation
 
