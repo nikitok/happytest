@@ -2,18 +2,20 @@
 //!
 //! This module provides a trait-based abstraction for connecting to
 //! different cryptocurrency exchanges. Currently supports:
-//! - Bybit (via existing reader module)
+//! - Bybit (WebSocket orderbook streaming)
 //!
 //! To add a new exchange:
-//! 1. Create `src/exchange/new_exchange.rs` implementing `ExchangeConnector`
-//! 2. Add variant to `ExchangeType` enum
-//! 3. Export in this mod.rs
+//! 1. Create `src/exchange/new_exchange/` directory with `mod.rs`, `reader.rs`, `models.rs`
+//! 2. Implement `ExchangeConnector` trait
+//! 3. Add variant to `ExchangeType` enum
+//! 4. Export in this mod.rs
 
+pub mod bybit;
 pub mod connector;
 
 pub use connector::{
     ExchangeConnector, ExchangeConfig, ExchangeError, ExchangeResult, ExchangeType,
 };
 
-// Re-export Bybit from reader module for backwards compatibility
-pub use crate::reader::{BybitReader, ReaderConfig};
+// Re-export Bybit types at exchange level
+pub use bybit::{BybitReader, ReaderConfig};

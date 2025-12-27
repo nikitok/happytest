@@ -1,3 +1,5 @@
+//! Bybit WebSocket reader for orderbook data collection.
+
 use anyhow::{Context, Result};
 use chrono::Local;
 use futures_util::{SinkExt, StreamExt};
@@ -8,8 +10,10 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::time::interval;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
-// Import models and storage
-use super::models::{OrderbookData, WsRequest, WsResponse};
+// Import Bybit-specific models from local module
+use super::models::{WsRequest, WsResponse};
+// Import shared types
+use crate::reader::models::OrderbookData;
 use crate::storage::{JsonlWriter, ParquetWriter, StorageWriter, WriterConfig};
 
 /// Configuration for the Bybit reader
@@ -135,36 +139,29 @@ impl BybitReader {
         // Add data to buffer instead of writing immediately
         let mut buffer_guard = self.data_buffer.lock().unwrap();
         buffer_guard.push(data.clone());
-        
-        // debug!(
-        //     "Buffered orderbook data: {} bids, {} asks (buffer size: {})",
-        //     data.bids.len(),
-        //     data.asks.len(),
-        //     buffer_guard.len()
-        // );
 
         Ok(())
     }
-    
+
     /// Flush buffered data to all storage writers
     fn flush_data(&self) -> Result<()> {
         let mut buffer_guard = self.data_buffer.lock().unwrap();
-        
+
         if !buffer_guard.is_empty() {
             let mut writers_guard = self.writers.lock().unwrap();
-            
+
             for writer in writers_guard.iter_mut() {
                 if let Err(e) = writer.write_batch(&buffer_guard) {
                     error!("Failed to write batch to {}: {}", writer.file_extension(), e);
                 }
             }
-            
+
             let batch_size = buffer_guard.len();
             buffer_guard.clear();
-            
+
             debug!("Flushed batch of {} records to storage", batch_size);
         }
-        
+
         Ok(())
     }
 
@@ -332,7 +329,7 @@ impl BybitReader {
                         Err(e) => {
                             error!("WebSocket error: {}", e);
                             error_count += 1;
-                            
+
                             // If too many errors, try to reconnect
                             if error_count % 10 == 0 {
                                 error!("Too many errors, stopping");
@@ -341,14 +338,14 @@ impl BybitReader {
                         }
                     }
                 }
-                
+
                 // Periodic flush based on interval_seconds
                 _ = flush_interval.tick() => {
                     // First flush buffered data
                     if let Err(e) = self.flush_data() {
                         error!("Failed to flush data: {}", e);
                     }
-                    
+
                     // Then flush writers
                     let mut writers_guard = self.writers.lock().unwrap();
                     for writer in writers_guard.iter_mut() {
@@ -544,7 +541,7 @@ impl BybitReader {
                         Err(e) => {
                             error!("WebSocket error: {}", e);
                             error_count += 1;
-                            
+
                             // If too many errors, try to reconnect
                             if error_count % 10 == 0 {
                                 error!("Too many errors, stopping");
@@ -553,14 +550,14 @@ impl BybitReader {
                         }
                     }
                 }
-                
+
                 // Periodic flush based on interval_seconds
                 _ = flush_interval.tick() => {
                     // First flush buffered data
                     if let Err(e) = self.flush_data() {
                         error!("Failed to flush data: {}", e);
                     }
-                    
+
                     // Then flush writers
                     let mut writers_guard = self.writers.lock().unwrap();
                     for writer in writers_guard.iter_mut() {
@@ -570,7 +567,7 @@ impl BybitReader {
                     }
                     debug!("Flushed writers after {} seconds", self.config.interval_seconds);
                 }
-                
+
                 // Check for cancellation
                 _ = cancel_token.cancelled() => {
                     info!("Cancellation requested during operation");
