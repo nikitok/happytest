@@ -18,21 +18,39 @@ HappyTest is a Rust-based framework designed for high-frequency trading research
 ## Architecture
 
 ```
-happytest/
-├── core/           # Models, trade state, execution engine
-├── data/           # JSONL/Parquet readers, orderbook parsing
-├── strategy/       # Market maker, arbitrage implementations
-├── backtest/       # Performance analytics, metrics collection
-└── trading/        # Order management, position tracking
+src/
+├── core/               # Fundamental types: Trade, OrderBook, TradeState, PnLResult
+├── domain/             # Business logic layer
+│   ├── indicator/      # Reusable indicators: Vwap, VolatilityDetector, MomentumDetector
+│   └── model/          # Unified domain models: Position, Side
+├── strategy/           # Trading strategies (GPT market maker)
+├── backtest/           # Backtesting framework
+│   ├── engine.rs       # BacktestEngine orchestration
+│   ├── trade_dashboard.rs  # TradeDashboard analytics
+│   └── executor.rs     # TradeEmitter execution simulation
+├── analytics/          # Analysis and reporting
+│   ├── pnl/            # P&L calculation (FIFO/Position methods)
+│   └── metrics.rs      # Trading metrics: Sharpe ratio, drawdown, win rate
+├── exchange/           # Exchange connectivity
+│   ├── bybit/          # Bybit WebSocket reader, models
+│   └── connector.rs    # ExchangeConnector trait
+├── storage/            # Data storage abstraction
+│   ├── source/         # Data reading: FileDataSource, ParquetDataSource
+│   └── sink/           # Data writing: JsonlWriter, ParquetWriter
+├── reader/             # Reader binary support, data models
+├── config/             # Configuration defaults and validation
+└── utils/              # (Deprecated) Legacy data loaders
 ```
 
 ### Key Modules
 
-**`core`** - Trade models, orderbook structures, state management  
-**`data`** - High-performance parsers for market data formats  
-**`strategy`** - Trait-based strategy interface with GPT market maker  
-**`backtest`** - Dashboard for PnL, Sharpe ratio, max drawdown  
-**`trading`** - Position tracking, order execution simulation
+**`core`** - Trade models, orderbook structures, state management
+**`domain`** - Technical indicators (VWAP, volatility, momentum) and position models
+**`strategy`** - Trait-based strategy interface with GPT market maker
+**`backtest`** - Engine, dashboard, and trade execution simulation
+**`analytics`** - P&L calculation and trading metrics (Sharpe, drawdown)
+**`exchange`** - Exchange connectivity with Bybit WebSocket support
+**`storage`** - Unified data I/O for JSONL and Parquet formats
 
 ## Quick Start
 
