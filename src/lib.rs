@@ -5,7 +5,6 @@ pub mod storage;
 pub mod strategy;
 pub mod backtest;
 pub mod utils;  // Deprecated: use storage instead
-pub mod trading;
 pub mod config;
 pub mod analytics;
 pub mod reader;
@@ -18,8 +17,7 @@ pub use core::{
 pub use domain::{Vwap, VolatilityDetector, MomentumDetector, OrderBookImbalance, Position, Side};
 pub use exchange::{ExchangeConnector, ExchangeConfig, ExchangeError, ExchangeType};
 pub use strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
-pub use backtest::{TradeDashboard, BacktestEngine};
+pub use backtest::{TradeDashboard, BacktestEngine, TradeEmitter, BacktestTradeEmitter, BacktestConfig};
 pub use utils::{FileDataSource, ParquetDataSource, OrderBookMessage};
-pub use trading::{TradeEmitter, BacktestTradeEmitter, BacktestConfig};
 pub use config::{AppConfig, validate_config};
 

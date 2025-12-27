@@ -2,11 +2,10 @@ use std::path::Path;
 use std::time::Instant;
 use log::{info, warn};
 
-use crate::core::{TradeState, Result, TradeError};
+use crate::core::{TradeState, Result, TradeError, DataSource};
 use crate::utils::{FileDataSource, ParquetDataSource, extract_symbol_from_filename};
 use crate::strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
-use crate::trading::{BacktestTradeEmitter, BacktestConfig, TradeEmitter};
-use crate::core::DataSource;
+use super::executor::{BacktestTradeEmitter, BacktestConfig, TradeEmitter};
 
 pub struct BacktestEngine {
     config: BacktestConfig,

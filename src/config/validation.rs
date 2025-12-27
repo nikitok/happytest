@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::core::{Result, TradeError};
-use crate::trading::BacktestConfig;
+use crate::backtest::BacktestConfig;
 use crate::strategy::GptMarketMakerConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
