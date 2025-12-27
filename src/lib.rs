@@ -1,5 +1,6 @@
 pub mod core;
 pub mod domain;
+pub mod exchange;
 pub mod strategy;
 pub mod backtest;
 pub mod utils;
@@ -13,7 +14,8 @@ pub use core::{
     Trade, OrderBook, PnLResult, ClosedTrade, CapitalMetrics,
     TradeState, TradeError, Result, DataSource, TradeExecutor, ExecutionStats
 };
-pub use domain::{Vwap, VolatilityDetector, MomentumDetector, OrderBookImbalance};
+pub use domain::{Vwap, VolatilityDetector, MomentumDetector, OrderBookImbalance, Position, Side};
+pub use exchange::{ExchangeConnector, ExchangeConfig, ExchangeError, ExchangeType};
 pub use strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
 pub use backtest::{TradeDashboard, BacktestEngine};
 pub use utils::{FileDataSource, ParquetDataSource, OrderBookMessage};
