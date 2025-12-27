@@ -1,0 +1,41 @@
+[package]
+name = "happytest"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "happytest"
+path = "src/main.rs"
+
+[[bin]]
+name = "reader"
+path = "src/reader/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+uuid = { version = "1.4", features = ["v4", "serde"] }
+log = "0.4"
+env_logger = "0.10"
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+comfy-table = "7.0"
+rand = "0.8"
+thiserror = "1.0"
+async-trait = "0.1"
+regex = "1.10"
+plotters = { version = "0.3", default-features = true }
+indicatif = "0.17"
+rayon = "1.8"
+tokio = { version = "1.35", features = ["full"] }
+tokio-util = { version = "0.7" }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots", "connect"], default-features = false }
+futures-util = "0.3"
+arrow = { version = "53.0", features = ["prettyprint"] }
+parquet = { version = "53.0", features = ["arrow"] }
+
+[dev-dependencies]
+criterion = "0.5"
+
