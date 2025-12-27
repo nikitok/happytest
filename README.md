@@ -59,17 +59,93 @@ src/
 cargo build --release
 
 # Run GPT market maker on sample data
-cargo run --release -- --file data/BTCUSDT.parquet gpt
+cargo run --release --bin happytest -- --file data/BTCUSDT.parquet gpt
+```
 
-# Custom parameters
-cargo run --release -- \
-  --file data/orderbook.jsonl \
+## Live Data Collection & Backtest
+
+### Step 1: Collect live orderbook data from Bybit
+
+```bash
+# Collect BTCUSDT data for 3 minutes (180 seconds)
+cargo run --release --bin reader -- \
+  --symbol BTCUSDT \
+  --duration 180 \
+  --interval 5 \
+  --parquet \
+  --output ./data
+```
+
+**Reader options:**
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--symbol` | Trading pair (BTCUSDT, ETHUSDT, etc.) | required |
+| `--duration` | Collection time in seconds (0 = infinite) | 60 |
+| `--interval` | Flush interval in seconds | 10 |
+| `--parquet` | Save as Parquet format | false |
+| `--jsonl` | Save as JSONL format | false |
+| `--output` | Output directory | ./data |
+| `--depth` | Orderbook depth | 50 |
+| `--testnet` | Use Bybit testnet | false |
+
+### Step 2: Run backtest on collected data
+
+```bash
+cargo run --release --bin happytest -- \
+  --file ./data/BTCUSDT_*.parquet \
+  gpt
+```
+
+### Step 3: Understanding the results
+
+The backtest outputs a P&L summary table:
+
+```
+=== P&L Summary by Symbol ===
++-----------+-----------+---------------+----------------+------------------+---------------+
+| Symbol    | Trades    | Realized P&L  | Unrealized P&L | Remaining Shares | Total P&L     |
++===========================================================================================+
+| BTCUSDT   | 418       | $62.32        | $80.87         | -1               | $143.19       |
++-----------+-----------+---------------+----------------+------------------+---------------+
+```
+
+**Key metrics explained:**
+
+| Metric | Description |
+|--------|-------------|
+| **Trades** | Total number of trades executed |
+| **Realized P&L** | Profit/loss from closed positions (actual gains) |
+| **Unrealized P&L** | Paper profit/loss from open positions |
+| **Remaining Shares** | Net position (positive = long, negative = short) |
+| **Total P&L** | Realized + Unrealized P&L |
+
+**Output files:**
+- `*_graphBTCUSDT.png` - P&L chart for the symbol
+- `*_graphcombined.png` - Combined P&L chart with all metrics
+
+### Advanced backtest options
+
+```bash
+# Custom execution parameters
+cargo run --release --bin happytest -- \
+  --file data/BTCUSDT.parquet \
   --fill-rate 0.95 \
   --slippage-bps 1.0 \
+  --rejection-rate 0.02 \
   gpt \
-  --fix-order-volume 0.01 \
+  --spread 0.001 \
   --take-profit-bps 30
+
+# View all strategy options
+cargo run --release --bin happytest -- gpt --help
 ```
+
+| Backtest Option | Description | Default |
+|-----------------|-------------|---------|
+| `--fill-rate` | Order fill probability (0.0-1.0) | 0.98 |
+| `--slippage-bps` | Slippage in basis points | 2.0 |
+| `--rejection-rate` | Order rejection probability | 0.01 |
+| `--margin-rate` | Margin requirement rate | 0.05 |
 
 ## Performance
 
