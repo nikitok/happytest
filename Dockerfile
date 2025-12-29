@@ -66,6 +66,5 @@ USER happytest
 # Set working directory
 WORKDIR /data
 
-# Default entrypoint
 ENTRYPOINT ["reader"]
 CMD ["--help"]
