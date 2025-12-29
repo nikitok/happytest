@@ -400,7 +400,7 @@ impl BybitReader {
                                                 error_count += 1;
                                             }
 
-                                            if message_count % 100 == 0 {
+                                            if message_count.is_multiple_of(100) {
                                                 info!(
                                                     "Processed {} orderbook messages, {} errors",
                                                     message_count, error_count
@@ -432,7 +432,7 @@ impl BybitReader {
                             error_count += 1;
 
                             // If too many errors, try to reconnect
-                            if error_count % 10 == 0 {
+                            if error_count.is_multiple_of(10) {
                                 error!("Too many errors, stopping");
                                 break;
                             }
@@ -623,7 +623,7 @@ impl BybitReader {
                                                 error_count += 1;
                                             }
 
-                                            if message_count % 100 == 0 {
+                                            if message_count.is_multiple_of(100) {
                                                 info!(
                                                     "Processed {} orderbook messages, {} errors",
                                                     message_count, error_count
@@ -655,7 +655,7 @@ impl BybitReader {
                             error_count += 1;
 
                             // If too many errors, try to reconnect
-                            if error_count % 10 == 0 {
+                            if error_count.is_multiple_of(10) {
                                 error!("Too many errors, stopping");
                                 break;
                             }
