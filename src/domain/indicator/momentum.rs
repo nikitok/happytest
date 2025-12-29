@@ -79,15 +79,26 @@ impl MomentumDetector {
     pub fn can_trade(&mut self, current_time: i64) -> (bool, Option<String>) {
         // Check cooldown
         if current_time - self.last_strong_momentum_time < self.cooldown_ms {
-            let remaining = (self.cooldown_ms - (current_time - self.last_strong_momentum_time)) as f64 / 1000.0;
-            return (false, Some(format!("MOMENTUM_COOLDOWN: {:.1}s remaining", remaining)));
+            let remaining = (self.cooldown_ms - (current_time - self.last_strong_momentum_time))
+                as f64
+                / 1000.0;
+            return (
+                false,
+                Some(format!("MOMENTUM_COOLDOWN: {:.1}s remaining", remaining)),
+            );
         }
 
         // Check current momentum
         let mom = self.value();
         if mom != 0.0 && mom.abs() > self.threshold {
             self.last_strong_momentum_time = current_time;
-            return (false, Some(format!("STRONG_MOMENTUM: {:.4} > {:.4}", mom, self.threshold)));
+            return (
+                false,
+                Some(format!(
+                    "STRONG_MOMENTUM: {:.4} > {:.4}",
+                    mom, self.threshold
+                )),
+            );
         }
 
         (true, None)
@@ -168,7 +179,7 @@ mod tests {
 
         // Trigger strong momentum
         detector.update(100.0);
-        detector.update(110.0);  // 10% move
+        detector.update(110.0); // 10% move
 
         let (can_trade, reason) = detector.can_trade(1000);
         assert!(!can_trade);

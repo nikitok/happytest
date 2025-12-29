@@ -58,9 +58,8 @@ impl VolatilityDetector {
         }
 
         let mean = returns.iter().sum::<f64>() / returns.len() as f64;
-        let variance = returns.iter()
-            .map(|r| (r - mean).powi(2))
-            .sum::<f64>() / returns.len() as f64;
+        let variance =
+            returns.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / returns.len() as f64;
 
         variance.sqrt()
     }
@@ -77,15 +76,26 @@ impl VolatilityDetector {
     pub fn can_trade(&mut self, current_time: i64) -> (bool, Option<String>) {
         // Check cooldown
         if current_time - self.last_high_volatility_time < self.cooldown_ms {
-            let remaining = (self.cooldown_ms - (current_time - self.last_high_volatility_time)) as f64 / 1000.0;
-            return (false, Some(format!("VOLATILITY_COOLDOWN: {:.1}s remaining", remaining)));
+            let remaining = (self.cooldown_ms - (current_time - self.last_high_volatility_time))
+                as f64
+                / 1000.0;
+            return (
+                false,
+                Some(format!("VOLATILITY_COOLDOWN: {:.1}s remaining", remaining)),
+            );
         }
 
         // Check current volatility
         let vol = self.value();
         if vol > 0.0 && vol > self.threshold {
             self.last_high_volatility_time = current_time;
-            return (false, Some(format!("HIGH_VOLATILITY: {:.4} > {:.4}", vol, self.threshold)));
+            return (
+                false,
+                Some(format!(
+                    "HIGH_VOLATILITY: {:.4} > {:.4}",
+                    vol, self.threshold
+                )),
+            );
         }
 
         (true, None)
@@ -134,11 +144,11 @@ mod tests {
 
         // Volatile prices
         detector.update(100.0);
-        detector.update(105.0);  // +5%
-        detector.update(95.0);   // -9.5%
+        detector.update(105.0); // +5%
+        detector.update(95.0); // -9.5%
 
         let vol = detector.value();
-        assert!(vol > 0.01);  // Should be high
+        assert!(vol > 0.01); // Should be high
         assert!(detector.is_high());
     }
 

@@ -31,12 +31,16 @@ impl OrderBookImbalance {
             return 0.0;
         }
 
-        let bid_vol: f64 = order_book.bids.iter()
+        let bid_vol: f64 = order_book
+            .bids
+            .iter()
             .take(self.depth)
             .map(|(_, v)| v)
             .sum();
 
-        let ask_vol: f64 = order_book.asks.iter()
+        let ask_vol: f64 = order_book
+            .asks
+            .iter()
             .take(self.depth)
             .map(|(_, v)| v)
             .sum();
@@ -90,7 +94,7 @@ mod tests {
         let obi = OrderBookImbalance::new(5);
         let book = create_order_book(
             vec![(100.0, 30.0), (99.0, 20.0)],  // 50 total
-            vec![(101.0, 10.0), (102.0, 10.0)],  // 20 total
+            vec![(101.0, 10.0), (102.0, 10.0)], // 20 total
         );
 
         // OBI = (50 - 20) / (50 + 20) = 30/70 = 0.4286
@@ -104,8 +108,8 @@ mod tests {
     fn test_obi_bearish() {
         let obi = OrderBookImbalance::new(5);
         let book = create_order_book(
-            vec![(100.0, 10.0), (99.0, 10.0)],   // 20 total
-            vec![(101.0, 30.0), (102.0, 20.0)],  // 50 total
+            vec![(100.0, 10.0), (99.0, 10.0)],  // 20 total
+            vec![(101.0, 30.0), (102.0, 20.0)], // 50 total
         );
 
         // OBI = (20 - 50) / (20 + 50) = -30/70 = -0.4286
@@ -128,9 +132,9 @@ mod tests {
 
     #[test]
     fn test_obi_depth_limit() {
-        let obi = OrderBookImbalance::new(2);  // Only top 2 levels
+        let obi = OrderBookImbalance::new(2); // Only top 2 levels
         let book = create_order_book(
-            vec![(100.0, 10.0), (99.0, 10.0), (98.0, 100.0)],  // Top 2: 20
+            vec![(100.0, 10.0), (99.0, 10.0), (98.0, 100.0)], // Top 2: 20
             vec![(101.0, 10.0), (102.0, 10.0), (103.0, 100.0)], // Top 2: 20
         );
 

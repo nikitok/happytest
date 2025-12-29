@@ -1,7 +1,7 @@
-pub mod trade_dashboard;
 pub mod engine;
 pub mod executor;
+pub mod trade_dashboard;
 
-pub use trade_dashboard::TradeDashboard;
 pub use engine::BacktestEngine;
-pub use executor::{TradeEmitter, BacktestTradeEmitter, BacktestConfig};
+pub use executor::{BacktestConfig, BacktestTradeEmitter, TradeEmitter};
+pub use trade_dashboard::TradeDashboard;

@@ -13,9 +13,11 @@
 //! use happytest::storage::sink::{JsonlWriter, ParquetWriter, StorageWriter};
 //! ```
 
-pub mod source;
 pub mod sink;
+pub mod source;
 
 // Re-export commonly used types at module level
-pub use source::{FileDataSource, ParquetDataSource, OrderBookMessage, extract_symbol_from_filename};
-pub use sink::{StorageWriter, WriterConfig, JsonlWriter, ParquetWriter, S3Uploader};
+pub use sink::{JsonlWriter, ParquetWriter, S3Uploader, StorageWriter, WriterConfig};
+pub use source::{
+    extract_symbol_from_filename, FileDataSource, OrderBookMessage, ParquetDataSource,
+};

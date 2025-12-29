@@ -1,5 +1,5 @@
-use clap::Args;
 use crate::strategy::Strategy;
+use clap::Args;
 
 /// Trait for strategy-specific command line arguments
 pub trait StrategyArgs: Args {
@@ -86,7 +86,7 @@ pub struct GptMarketMakerArgs {
 impl GptMarketMakerArgs {
     pub fn build_strategy(&self, symbol: String) -> Box<dyn Strategy> {
         use crate::strategy::{GptMarketMaker, GptMarketMakerConfig};
-        
+
         let config = GptMarketMakerConfig {
             fix_order_volume: self.fix_order_volume,
             vwap_window: self.vwap_window,
@@ -107,7 +107,7 @@ impl GptMarketMakerArgs {
             momentum_threshold: self.momentum_threshold,
             momentum_cooldown_ms: self.momentum_cooldown_ms,
         };
-        
+
         Box::new(GptMarketMaker::new(symbol, config))
     }
 }

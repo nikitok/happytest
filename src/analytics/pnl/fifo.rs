@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use crate::core::{Trade, ClosedTrade, PnLResult};
 use super::models::Record;
+use crate::core::{ClosedTrade, PnLResult, Trade};
+use std::collections::HashMap;
 
 /// FIFO (First-In-First-Out) processor
 pub struct FifoProcessor;
@@ -9,7 +9,7 @@ impl FifoProcessor {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Process trades and calculate realized P&L using FIFO method
     ///
     /// # Arguments
@@ -20,11 +20,11 @@ impl FifoProcessor {
     pub fn process_realized(&self, trades: &[Trade]) -> PnLResult {
         // Dictionary to store open trades by asset
         let mut open_trades: HashMap<String, Vec<Trade>> = HashMap::new();
-        
+
         // Lists to store closed trades and PnL records
         let mut closed_trades: Vec<ClosedTrade> = Vec::new();
         let mut pnl_records = Vec::new();
-        
+
         // Process each filled trade chronologically
         for order in trades {
             let time = order.time;
@@ -32,7 +32,7 @@ impl FifoProcessor {
             let side = order.side.clone();
             let price = order.price;
             let quantity = order.quantity;
-            
+
             // Create a new trade
             let trade = Trade {
                 id: order.id.clone(),
@@ -43,27 +43,27 @@ impl FifoProcessor {
                 quantity,
                 status: order.status.clone(),
             };
-            
+
             // Initialize the asset's open trades list if it doesn't exist
-            let asset_trades = open_trades.entry(symbol.clone()).or_insert_with(Vec::new);
-            
+            let asset_trades = open_trades.entry(symbol.clone()).or_default();
+
             // If there are no open trades for this asset or the side is the same as the first open trade,
             // add this trade to the open trades list
             if asset_trades.is_empty() || asset_trades[0].side == side {
                 asset_trades.push(trade);
                 continue;
             }
-            
+
             // Process matching trades (opposite sides)
             let mut remaining_quantity = quantity;
-            
+
             // Match with existing open trades using FIFO
             while remaining_quantity > 0.0 && !asset_trades.is_empty() {
                 let open_trade = &mut asset_trades[0];
-                
+
                 // Calculate the matched quantity
                 let matched_quantity = remaining_quantity.min(open_trade.quantity);
-                
+
                 // Calculate PnL for this match
                 let pnl = if side.to_lowercase() == "buy" {
                     // Current trade is buy, open trade is sell
@@ -72,7 +72,7 @@ impl FifoProcessor {
                     // Current trade is sell, open trade is buy
                     (price - open_trade.price) * matched_quantity
                 };
-                
+
                 // Create a closed trade record
                 let closed_trade = ClosedTrade {
                     quantity: matched_quantity,
@@ -83,24 +83,24 @@ impl FifoProcessor {
                     close_price: price,
                 };
                 closed_trades.push(closed_trade);
-                
+
                 // Add to PnL records for visualization
                 pnl_records.push(Record {
                     timestamp: time,
                     symbol: symbol.clone(),
                     profit: pnl,
                 });
-                
+
                 // Update remaining quantities
                 remaining_quantity -= matched_quantity;
                 open_trade.quantity -= matched_quantity;
-                
+
                 // Remove the open trade if it's fully matched
                 if open_trade.quantity == 0.0 {
                     asset_trades.remove(0);
                 }
             }
-            
+
             // If there's still remaining quantity, add it as a new open trade
             if remaining_quantity > 0.0 {
                 let new_trade = Trade {
@@ -115,17 +115,17 @@ impl FifoProcessor {
                 asset_trades.push(new_trade);
             }
         }
-        
+
         // Calculate total realized PnL
         let total_pnl = closed_trades.iter().map(|t| t.pnl).sum();
-        
+
         // Remove empty entries from open_trades
         open_trades.retain(|_, trades| !trades.is_empty());
-        
+
         // Calculate remaining shares and unrealized P&L
         let mut remaining_shares = 0.0;
         let mut unrealized_pnl = 0.0;
-        
+
         // Get the last price per symbol for unrealized P&L calculation
         let mut last_prices: HashMap<String, f64> = HashMap::new();
         for trade in trades.iter().rev() {
@@ -133,7 +133,7 @@ impl FifoProcessor {
                 last_prices.insert(trade.symbol.clone(), trade.price);
             }
         }
-        
+
         for (symbol, asset_trades) in &open_trades {
             let last_price = last_prices.get(symbol).copied().unwrap_or(0.0);
             for trade in asset_trades {
@@ -146,7 +146,7 @@ impl FifoProcessor {
                 }
             }
         }
-        
+
         // Create and return PnLResult object
         PnLResult {
             total_pnl,

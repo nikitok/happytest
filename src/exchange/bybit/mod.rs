@@ -14,5 +14,5 @@
 pub mod models;
 pub mod reader;
 
-pub use models::{BybitResponse, OrderbookResult, WsRequest, WsResponse, WsOrderbookData};
+pub use models::{BybitResponse, OrderbookResult, WsOrderbookData, WsRequest, WsResponse};
 pub use reader::{BybitReader, ReaderConfig};

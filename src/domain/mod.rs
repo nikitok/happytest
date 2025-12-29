@@ -7,5 +7,5 @@
 pub mod indicator;
 pub mod model;
 
-pub use indicator::{Vwap, VolatilityDetector, MomentumDetector, OrderBookImbalance};
+pub use indicator::{MomentumDetector, OrderBookImbalance, VolatilityDetector, Vwap};
 pub use model::{Position, Side};

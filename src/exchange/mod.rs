@@ -14,7 +14,7 @@ pub mod bybit;
 pub mod connector;
 
 pub use connector::{
-    ExchangeConnector, ExchangeConfig, ExchangeError, ExchangeResult, ExchangeType,
+    ExchangeConfig, ExchangeConnector, ExchangeError, ExchangeResult, ExchangeType,
 };
 
 // Re-export Bybit types at exchange level

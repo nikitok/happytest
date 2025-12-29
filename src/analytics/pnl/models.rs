@@ -1,15 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub enum Method {
+    #[default]
     Fifo,
     Position,
-}
-
-impl Default for Method {
-    fn default() -> Self {
-        Method::Fifo
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

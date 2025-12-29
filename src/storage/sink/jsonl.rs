@@ -7,6 +7,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Write};
 
 /// JSONL (newline-delimited JSON) writer implementation with batching
+#[derive(Default)]
 pub struct JsonlWriter {
     writer: Option<BufWriter<File>>,
     buffer: Vec<OrderbookData>,
@@ -15,11 +16,7 @@ pub struct JsonlWriter {
 
 impl JsonlWriter {
     pub fn new() -> Self {
-        Self {
-            writer: None,
-            buffer: Vec::new(),
-            config: WriterConfig::default(),
-        }
+        Self::default()
     }
 
     /// Write buffered data to JSONL file
@@ -27,10 +24,9 @@ impl JsonlWriter {
         if !self.buffer.is_empty() {
             if let Some(writer) = &mut self.writer {
                 for data in &self.buffer {
-                    let json_line = serde_json::to_string(data)
-                        .context("Failed to serialize data to JSON")?;
-                    writeln!(writer, "{}", json_line)
-                        .context("Failed to write to JSONL file")?;
+                    let json_line =
+                        serde_json::to_string(data).context("Failed to serialize data to JSON")?;
+                    writeln!(writer, "{}", json_line).context("Failed to write to JSONL file")?;
                 }
                 writer.flush().context("Failed to flush JSONL writer")?;
                 log::debug!("Wrote batch of {} records to JSONL file", self.buffer.len());
@@ -50,15 +46,12 @@ impl StorageWriter for JsonlWriter {
         let absolute_path = if path.is_absolute() {
             path.to_path_buf()
         } else {
-            std::env::current_dir()
-                .unwrap_or_default()
-                .join(path)
+            std::env::current_dir().unwrap_or_default().join(path)
         };
         log::info!("Creating JSONL output file: {}", absolute_path.display());
 
         let file = OpenOptions::new()
             .create(true)
-            .write(true)
             .append(true)
             .open(&filename)
             .context("Failed to create JSONL output file")?;
@@ -100,15 +93,15 @@ impl StorageWriter for JsonlWriter {
 
         // Close the JSONL writer
         if let Some(mut writer) = self.writer.take() {
-            writer.flush().context("Failed to flush JSONL writer on close")?;
+            writer
+                .flush()
+                .context("Failed to flush JSONL writer on close")?;
             let filename = format!("{}.jsonl", self.config.base_filename);
             let path = std::path::Path::new(&filename);
             let absolute_path = if path.is_absolute() {
                 path.to_path_buf()
             } else {
-                std::env::current_dir()
-                    .unwrap_or_default()
-                    .join(path)
+                std::env::current_dir().unwrap_or_default().join(path)
             };
             log::info!("JSONL file saved: {}", absolute_path.display());
         }

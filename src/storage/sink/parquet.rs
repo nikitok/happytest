@@ -15,6 +15,7 @@ use parquet::file::properties::WriterProperties;
 use std::sync::Arc;
 
 /// Parquet writer implementation with batching
+#[derive(Default)]
 pub struct ParquetWriter {
     writer: Option<ArrowWriter<File>>,
     buffer: Vec<OrderbookData>,
@@ -23,11 +24,7 @@ pub struct ParquetWriter {
 
 impl ParquetWriter {
     pub fn new() -> Self {
-        Self {
-            writer: None,
-            buffer: Vec::new(),
-            config: WriterConfig::default(),
-        }
+        Self::default()
     }
 
     /// Create the schema for Parquet file
@@ -55,10 +52,10 @@ impl ParquetWriter {
             symbol_builder.append_value(&record.symbol);
 
             // Serialize bids and asks as JSON strings
-            let bids_json = serde_json::to_string(&record.bids)
-                .context("Failed to serialize bids")?;
-            let asks_json = serde_json::to_string(&record.asks)
-                .context("Failed to serialize asks")?;
+            let bids_json =
+                serde_json::to_string(&record.bids).context("Failed to serialize bids")?;
+            let asks_json =
+                serde_json::to_string(&record.asks).context("Failed to serialize asks")?;
 
             bids_builder.append_value(&bids_json);
             asks_builder.append_value(&asks_json);
@@ -86,8 +83,13 @@ impl ParquetWriter {
         if !self.buffer.is_empty() {
             if let Some(writer) = &mut self.writer {
                 let batch = Self::convert_to_arrow_batch(&self.buffer)?;
-                writer.write(&batch).context("Failed to write Parquet batch")?;
-                log::debug!("Wrote batch of {} records to Parquet file", self.buffer.len());
+                writer
+                    .write(&batch)
+                    .context("Failed to write Parquet batch")?;
+                log::debug!(
+                    "Wrote batch of {} records to Parquet file",
+                    self.buffer.len()
+                );
                 self.buffer.clear();
             }
         }
@@ -104,14 +106,11 @@ impl StorageWriter for ParquetWriter {
         let absolute_path = if path.is_absolute() {
             path.to_path_buf()
         } else {
-            std::env::current_dir()
-                .unwrap_or_default()
-                .join(path)
+            std::env::current_dir().unwrap_or_default().join(path)
         };
         log::info!("Creating Parquet output file: {}", absolute_path.display());
 
-        let file = File::create(&filename)
-            .context("Failed to create Parquet output file")?;
+        let file = File::create(&filename).context("Failed to create Parquet output file")?;
 
         let schema = Arc::new(Self::create_schema());
         let props = WriterProperties::builder()
@@ -120,7 +119,7 @@ impl StorageWriter for ParquetWriter {
 
         self.writer = Some(
             ArrowWriter::try_new(file, schema, Some(props))
-                .context("Failed to create Parquet writer")?
+                .context("Failed to create Parquet writer")?,
         );
 
         Ok(())
@@ -165,9 +164,7 @@ impl StorageWriter for ParquetWriter {
             let absolute_path = if path.is_absolute() {
                 path.to_path_buf()
             } else {
-                std::env::current_dir()
-                    .unwrap_or_default()
-                    .join(path)
+                std::env::current_dir().unwrap_or_default().join(path)
             };
             log::info!("Parquet file saved: {}", absolute_path.display());
         }

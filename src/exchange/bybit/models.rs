@@ -39,10 +39,10 @@ pub struct WsResponse {
     pub conn_id: Option<String>,
     pub op: Option<String>,
     #[serde(rename = "type")]
-    pub msg_type: Option<String>,  // "snapshot" or "delta" for orderbook updates
+    pub msg_type: Option<String>, // "snapshot" or "delta" for orderbook updates
     pub ts: Option<i64>,
     pub data: Option<WsOrderbookData>,
-    pub cts: Option<i64>,  // client timestamp
+    pub cts: Option<i64>, // client timestamp
 }
 
 /// WebSocket orderbook data from Bybit

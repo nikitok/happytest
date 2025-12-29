@@ -1,17 +1,18 @@
-use super::models::{Trade, OrderBook};
+use super::models::{OrderBook, Trade};
 use chrono::Utc;
 use log::{debug, warn};
 
+#[derive(Default)]
 pub struct TradeState {
     all_trades: Vec<Trade>,
-    orderbooks: Vec<OrderBook>
+    orderbooks: Vec<OrderBook>,
 }
 
 impl TradeState {
     pub fn new() -> Self {
         Self {
             all_trades: Vec::new(),
-            orderbooks: Vec::new()
+            orderbooks: Vec::new(),
         }
     }
 
@@ -35,7 +36,10 @@ impl TradeState {
             if trade.id == trade_id {
                 let old_status = trade.status.clone();
                 trade.status = new_status.clone();
-                debug!("Trade {} status changed from {} to {}", trade_id, old_status, new_status);
+                debug!(
+                    "Trade {} status changed from {} to {}",
+                    trade_id, old_status, new_status
+                );
                 return true;
             }
         }
@@ -61,14 +65,14 @@ impl TradeState {
     pub fn get_position_age(&self, symbol: &str) -> i64 {
         let now = Utc::now().timestamp_millis();
         let mut last_time = 0;
-        
+
         for trade in self.all_trades.iter().rev() {
             if trade.symbol == symbol && trade.status == "filled" {
                 last_time = trade.time;
                 break;
             }
         }
-        
+
         if last_time > 0 {
             now - last_time
         } else {
@@ -79,7 +83,7 @@ impl TradeState {
     pub fn get_recent_fills(&self, symbol: &str, window_ms: i64) -> Vec<String> {
         let now = Utc::now().timestamp_millis();
         let mut result = Vec::new();
-        
+
         for trade in self.all_trades.iter().rev() {
             if trade.symbol == symbol && trade.status == "filled" && now - trade.time <= window_ms {
                 result.push("filled".to_string());

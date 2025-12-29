@@ -1,3 +1,3 @@
 pub mod validation;
 
-pub use validation::{AppConfig, validate_config};
+pub use validation::{validate_config, AppConfig};

@@ -4,8 +4,8 @@
 
 use anyhow::{Context, Result};
 use aws_sdk_s3::Client;
-use std::path::Path;
 use chrono::{DateTime, Utc};
+use std::path::Path;
 
 /// S3 Uploader for uploading files to AWS S3 with Athena-compatible partitioning.
 pub struct S3Uploader {
@@ -54,14 +54,16 @@ impl S3Uploader {
     ///
     /// Format: `prefix/symbol=BTCUSDT/date=2024-12-28/filename.parquet`
     pub fn generate_athena_key(&self, symbol: &str, timestamp: i64, filename: &str) -> String {
-        let datetime = DateTime::<Utc>::from_timestamp_millis(timestamp)
-            .unwrap_or_else(Utc::now);
+        let datetime = DateTime::<Utc>::from_timestamp_millis(timestamp).unwrap_or_else(Utc::now);
         let date = datetime.format("%Y-%m-%d").to_string();
 
         if self.prefix.is_empty() {
             format!("symbol={}/date={}/{}", symbol, date, filename)
         } else {
-            format!("{}/symbol={}/date={}/{}", self.prefix, symbol, date, filename)
+            format!(
+                "{}/symbol={}/date={}/{}",
+                self.prefix, symbol, date, filename
+            )
         }
     }
 
@@ -75,9 +77,9 @@ impl S3Uploader {
             .await
             .context(format!("Failed to read file: {:?}", local_path))?;
 
-        let content_type = if local_path.extension().map_or(false, |ext| ext == "parquet") {
+        let content_type = if local_path.extension().is_some_and(|ext| ext == "parquet") {
             "application/vnd.apache.parquet"
-        } else if local_path.extension().map_or(false, |ext| ext == "jsonl") {
+        } else if local_path.extension().is_some_and(|ext| ext == "jsonl") {
             "application/x-ndjson"
         } else {
             "application/octet-stream"
@@ -91,7 +93,10 @@ impl S3Uploader {
             .content_type(content_type)
             .send()
             .await
-            .context(format!("Failed to upload to S3: s3://{}/{}", self.bucket, s3_key))?;
+            .context(format!(
+                "Failed to upload to S3: s3://{}/{}",
+                self.bucket, s3_key
+            ))?;
 
         log::info!("Uploaded to S3: s3://{}/{}", self.bucket, s3_key);
 
@@ -143,8 +148,7 @@ mod tests {
 
     /// Helper function to generate Athena-compatible S3 key (for testing without S3 client)
     fn generate_key(prefix: &str, symbol: &str, timestamp: i64, filename: &str) -> String {
-        let datetime = DateTime::<Utc>::from_timestamp_millis(timestamp)
-            .unwrap_or_else(Utc::now);
+        let datetime = DateTime::<Utc>::from_timestamp_millis(timestamp).unwrap_or_else(Utc::now);
         let date = datetime.format("%Y-%m-%d").to_string();
         let prefix = prefix.trim_matches('/');
 

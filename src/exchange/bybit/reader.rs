@@ -160,7 +160,11 @@ impl BybitReader {
             None => return Ok(()), // S3 not configured, skip
         };
 
-        let prefix = self.config.s3_prefix.clone().unwrap_or_else(|| "orderbook".to_string());
+        let prefix = self
+            .config
+            .s3_prefix
+            .clone()
+            .unwrap_or_else(|| "orderbook".to_string());
         let region = self.config.s3_region.clone();
 
         // Get the base filename
@@ -241,7 +245,11 @@ impl BybitReader {
 
             for writer in writers_guard.iter_mut() {
                 if let Err(e) = writer.write_batch(&buffer_guard) {
-                    error!("Failed to write batch to {}: {}", writer.file_extension(), e);
+                    error!(
+                        "Failed to write batch to {}: {}",
+                        writer.file_extension(),
+                        e
+                    );
                 }
             }
 
@@ -269,7 +277,10 @@ impl BybitReader {
 
     /// Run the WebSocket reader
     pub async fn run(&self) -> Result<()> {
-        info!("Starting Bybit WebSocket reader for symbol: {}", self.config.symbol);
+        info!(
+            "Starting Bybit WebSocket reader for symbol: {}",
+            self.config.symbol
+        );
         info!("Flush interval: {} seconds", self.config.interval_seconds);
         info!(
             "Duration: {} seconds",
@@ -307,7 +318,8 @@ impl BybitReader {
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
         // Subscribe to orderbook
-        let subscribe_msg = WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
+        let subscribe_msg =
+            WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
         let subscribe_text = serde_json::to_string(&subscribe_msg)?;
         ws_sender
             .send(Message::Text(subscribe_text))
@@ -482,7 +494,10 @@ impl BybitReader {
         &self,
         cancel_token: tokio_util::sync::CancellationToken,
     ) -> Result<()> {
-        info!("Starting Bybit WebSocket reader for symbol: {}", self.config.symbol);
+        info!(
+            "Starting Bybit WebSocket reader for symbol: {}",
+            self.config.symbol
+        );
         info!("Flush interval: {} seconds", self.config.interval_seconds);
         info!(
             "Duration: {} seconds",
@@ -520,7 +535,8 @@ impl BybitReader {
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
         // Subscribe to orderbook
-        let subscribe_msg = WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
+        let subscribe_msg =
+            WsRequest::subscribe(vec![self.config.symbol.clone()], self.config.depth);
         let subscribe_text = serde_json::to_string(&subscribe_msg)?;
         ws_sender
             .send(Message::Text(subscribe_text))

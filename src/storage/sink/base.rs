@@ -1,7 +1,7 @@
 //! Base trait and config for storage writers.
 
-use anyhow::Result;
 use crate::reader::models::OrderbookData;
+use anyhow::Result;
 
 /// Configuration for storage writers
 #[derive(Debug, Clone)]

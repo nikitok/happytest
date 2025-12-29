@@ -1,7 +1,7 @@
-use crate::core::{Trade, TradeExecutor, ExecutionStats, Result};
+use crate::core::{ExecutionStats, Result, Trade, TradeExecutor};
 use log::info;
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 pub trait TradeEmitter {
     fn execute_trade(&mut self, trade: Option<Trade>) -> Option<Trade>;
@@ -53,37 +53,39 @@ impl TradeEmitter for BacktestTradeEmitter {
         if let Some(mut trade) = trade {
             self.stats.total_trades += 1;
             let random_value: f64 = self.rng.gen();
-            
+
             // Check for rejection
             if random_value < self.config.rejection_rate {
                 trade.status = "rejected".to_string();
                 self.stats.rejected_trades += 1;
                 return Some(trade);
             }
-            
+
             // Check for fill
             if random_value < self.config.fill_rate {
                 // Apply slippage
                 let slippage_factor = 1.0 + (self.config.slippage_bps / 10000.0);
-                
+
                 let original_price = trade.price;
                 if trade.side == "Buy" {
                     trade.price *= slippage_factor;
                 } else {
                     trade.price /= slippage_factor;
                 }
-                
+
                 let slippage = (trade.price - original_price).abs();
                 self.stats.total_slippage += slippage;
-                
+
                 trade.status = "filled".to_string();
                 self.stats.filled_trades += 1;
-                info!("Trade executed: {} {} @ {} - Status: {}", 
-                    trade.side, trade.quantity, trade.price, trade.status);
+                info!(
+                    "Trade executed: {} {} @ {} - Status: {}",
+                    trade.side, trade.quantity, trade.price, trade.status
+                );
             } else {
                 trade.status = "unfilled".to_string();
             }
-            
+
             Some(trade)
         } else {
             None
@@ -95,7 +97,7 @@ impl TradeExecutor for BacktestTradeEmitter {
     fn execute_trade(&mut self, trade: Trade) -> Result<Trade> {
         Ok(TradeEmitter::execute_trade(self, Some(trade)).unwrap())
     }
-    
+
     fn get_stats(&self) -> ExecutionStats {
         self.stats.clone()
     }

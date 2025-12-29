@@ -1,11 +1,15 @@
+use log::{debug, info};
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use log::{info, debug};
-use serde::{Deserialize, Serialize};
 
-use crate::core::{OrderBook, errors::{Result, TradeError}, traits::DataSource};
+use crate::core::{
+    errors::{Result, TradeError},
+    traits::DataSource,
+    OrderBook,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OrderBookMessage {
@@ -45,11 +49,12 @@ impl FileDataSource {
     pub fn new(file_path: impl AsRef<Path>) -> Result<Self> {
         let path = file_path.as_ref().to_path_buf();
         if !path.exists() {
-            return Err(TradeError::DataLoadingError(
-                format!("File not found: {:?}", path)
-            ));
+            return Err(TradeError::DataLoadingError(format!(
+                "File not found: {:?}",
+                path
+            )));
         }
-        
+
         Ok(Self {
             file_path: path,
             reader: None,
@@ -59,28 +64,26 @@ impl FileDataSource {
             total_messages: None,
         })
     }
-    
+
     pub fn with_batch_size(mut self, batch_size: usize) -> Self {
         self.batch_size = batch_size;
         self
     }
-    
+
     /// Load a batch of lines from the file
     fn load_batch(&mut self) -> Result<bool> {
         if self.reader.is_none() {
             let file = File::open(&self.file_path)
-                .map_err(|e| TradeError::DataLoadingError(
-                    format!("Failed to open file: {}", e)
-                ))?;
+                .map_err(|e| TradeError::DataLoadingError(format!("Failed to open file: {}", e)))?;
             self.reader = Some(BufReader::new(file));
         }
-        
+
         self.buffer.clear();
         self.current_index = 0;
-        
+
         let reader = self.reader.as_mut().unwrap();
         let batch_start = Instant::now();
-        
+
         for _ in 0..self.batch_size {
             let mut line = String::new();
             match reader.read_line(&mut line) {
@@ -93,99 +96,98 @@ impl FileDataSource {
                 Err(e) => return Err(TradeError::IoError(e)),
             }
         }
-        
+
         if !self.buffer.is_empty() {
-            debug!("Loaded batch of {} messages in {:.3}s", 
-                   self.buffer.len(), batch_start.elapsed().as_secs_f64());
+            debug!(
+                "Loaded batch of {} messages in {:.3}s",
+                self.buffer.len(),
+                batch_start.elapsed().as_secs_f64()
+            );
         }
-        
+
         Ok(!self.buffer.is_empty())
     }
-    
+
     /// Parse a message into an OrderBook
     fn parse_message(message: &OrderBookMessage) -> Result<OrderBook> {
         let mut bids = Vec::new();
         for bid in &message.data.b {
             if bid.len() >= 2 {
-                let price = bid[0].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid bid price: {}", bid[0])
-                    ))?;
-                let quantity = bid[1].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid bid quantity: {}", bid[1])
-                    ))?;
+                let price = bid[0].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid bid price: {}", bid[0]))
+                })?;
+                let quantity = bid[1].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid bid quantity: {}", bid[1]))
+                })?;
                 bids.push((price, quantity));
             }
         }
-        
+
         let mut asks = Vec::new();
         for ask in &message.data.a {
             if ask.len() >= 2 {
-                let price = ask[0].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid ask price: {}", ask[0])
-                    ))?;
-                let quantity = ask[1].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid ask quantity: {}", ask[1])
-                    ))?;
+                let price = ask[0].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid ask price: {}", ask[0]))
+                })?;
+                let quantity = ask[1].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid ask quantity: {}", ask[1]))
+                })?;
                 asks.push((price, quantity));
             }
         }
-        
+
         Ok(OrderBook::new(bids, asks, message.ts))
     }
-    
+
     /// Parse a V2 format message into an OrderBook
     fn parse_message_v2(message: &OrderBookMessageV2) -> Result<OrderBook> {
         let mut bids = Vec::new();
         for bid in &message.bids {
             if bid.len() >= 2 {
-                let price = bid[0].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid bid price: {}", bid[0])
-                    ))?;
-                let quantity = bid[1].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid bid quantity: {}", bid[1])
-                    ))?;
+                let price = bid[0].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid bid price: {}", bid[0]))
+                })?;
+                let quantity = bid[1].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid bid quantity: {}", bid[1]))
+                })?;
                 bids.push((price, quantity));
             }
         }
-        
+
         let mut asks = Vec::new();
         for ask in &message.asks {
             if ask.len() >= 2 {
-                let price = ask[0].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid ask price: {}", ask[0])
-                    ))?;
-                let quantity = ask[1].parse::<f64>()
-                    .map_err(|_| TradeError::InvalidOrderBook(
-                        format!("Invalid ask quantity: {}", ask[1])
-                    ))?;
+                let price = ask[0].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid ask price: {}", ask[0]))
+                })?;
+                let quantity = ask[1].parse::<f64>().map_err(|_| {
+                    TradeError::InvalidOrderBook(format!("Invalid ask quantity: {}", ask[1]))
+                })?;
                 asks.push((price, quantity));
             }
         }
-        
+
         Ok(OrderBook::new(bids, asks, message.timestamp))
     }
-    
+
     /// Pre-count total messages in the file (optional, for progress tracking)
     pub fn count_messages(&mut self) -> Result<usize> {
         if let Some(count) = self.total_messages {
             return Ok(count);
         }
-        
+
         let start = Instant::now();
         let file = File::open(&self.file_path)?;
         let reader = BufReader::new(file);
-        
+
         let count = reader.lines().filter(|l| l.is_ok()).count();
         self.total_messages = Some(count);
-        
-        info!("Counted {} messages in {:.2}s", count, start.elapsed().as_secs_f64());
+
+        info!(
+            "Counted {} messages in {:.2}s",
+            count,
+            start.elapsed().as_secs_f64()
+        );
         Ok(count)
     }
 }
@@ -193,16 +195,14 @@ impl FileDataSource {
 impl DataSource for FileDataSource {
     fn next_orderbook(&mut self) -> Result<Option<OrderBook>> {
         // Check if we need to load a new batch
-        if self.current_index >= self.buffer.len() {
-            if !self.load_batch()? {
-                return Ok(None); // EOF
-            }
+        if self.current_index >= self.buffer.len() && !self.load_batch()? {
+            return Ok(None); // EOF
         }
-        
+
         // Get the next line from buffer
         if let Some(line) = self.buffer.get(self.current_index) {
             self.current_index += 1;
-            
+
             // Try parsing as V2 format first (newer format)
             if let Ok(message_v2) = serde_json::from_str::<OrderBookMessageV2>(line) {
                 let orderbook = Self::parse_message_v2(&message_v2)?;
@@ -217,14 +217,14 @@ impl DataSource for FileDataSource {
             Ok(None)
         }
     }
-    
+
     fn reset(&mut self) -> Result<()> {
         self.reader = None;
         self.buffer.clear();
         self.current_index = 0;
         Ok(())
     }
-    
+
     fn total_count(&self) -> Option<usize> {
         self.total_messages
     }

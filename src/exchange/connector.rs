@@ -3,8 +3,8 @@
 //! This trait abstracts the exchange connectivity, allowing easy extension
 //! to new exchanges without modifying core logic.
 
-use async_trait::async_trait;
 use crate::reader::models::OrderbookData;
+use async_trait::async_trait;
 
 /// Result type for exchange operations.
 pub type ExchangeResult<T> = Result<T, ExchangeError>;

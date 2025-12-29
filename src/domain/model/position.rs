@@ -167,7 +167,7 @@ mod tests {
         assert!((pnl - 500.0).abs() < 0.01);
 
         let pnl_bps = pos.pnl_bps(50500.0);
-        assert!((pnl_bps - 100.0).abs() < 0.1);  // 1% = 100 bps
+        assert!((pnl_bps - 100.0).abs() < 0.1); // 1% = 100 bps
     }
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
         assert!((pnl - 500.0).abs() < 0.01);
 
         let pnl_bps = pos.pnl_bps(49500.0);
-        assert!((pnl_bps - 100.0).abs() < 0.1);  // 1% = 100 bps
+        assert!((pnl_bps - 100.0).abs() < 0.1); // 1% = 100 bps
     }
 
     #[test]

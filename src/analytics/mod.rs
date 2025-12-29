@@ -11,15 +11,14 @@
 //! use happytest::analytics::metrics::{MetricsCalculator, TradingMetrics};
 //! ```
 
-pub mod pnl;
 pub mod metrics;
+pub mod pnl;
 
 // Re-export commonly used types from pnl
 pub use pnl::{
-    Method, Record, PnlReport, Processor,
-    FifoProcessor, PositionProcessor,
-    calculate_unrealized_pnl,
+    calculate_unrealized_pnl, FifoProcessor, Method, PnlReport, PositionProcessor, Processor,
+    Record,
 };
 
 // Re-export metrics types
-pub use metrics::{TradingMetrics, MetricsCalculator};
+pub use metrics::{MetricsCalculator, TradingMetrics};
