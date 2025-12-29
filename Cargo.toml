@@ -36,6 +36,10 @@ futures-util = "0.3"
 arrow = { version = "53.0", features = ["prettyprint"] }
 parquet = { version = "53.0", features = ["arrow"] }
 
+# AWS SDK for S3 uploads
+aws-config = { version = "1.5", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1.61"
+
 [dev-dependencies]
 criterion = "0.5"
 

@@ -1,0 +1,14 @@
+apiVersion: v2
+name: happytest-reader
+description: HappyTest orderbook data collector with S3 upload support
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - orderbook
+  - trading
+  - bybit
+  - s3
+  - athena
+maintainers:
+  - name: HappyTest Team

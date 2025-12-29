@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: happytest-reader-config
+  labels:
+    app: happytest-reader
+data:
+  # Reader configuration
+  SYMBOL: "BTCUSDT"
+  INTERVAL: "600"
+  DURATION: "0"
+  DEPTH: "50"
+  # S3 configuration
+  S3_PREFIX: "orderbook/v1"
+  # Logging
+  RUST_LOG: "info"

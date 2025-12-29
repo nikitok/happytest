@@ -42,6 +42,18 @@ struct Args {
     /// Save as JSONL format
     #[arg(long, default_value_t = false)]
     jsonl: bool,
+
+    /// S3 bucket for uploading data (enables S3 upload)
+    #[arg(long)]
+    s3_bucket: Option<String>,
+
+    /// S3 key prefix for Athena partitioning (default: "orderbook")
+    #[arg(long, default_value = "orderbook")]
+    s3_prefix: String,
+
+    /// AWS region for S3 (uses default credential chain if not specified)
+    #[arg(long)]
+    s3_region: Option<String>,
 }
 
 #[tokio::main]
@@ -65,8 +77,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Depth: {}", args.depth);
     println!("Parquet: {}", if args.parquet { "enabled" } else { "disabled" });
     println!("JSONL: {}", if args.jsonl { "enabled" } else { "disabled" });
+    if let Some(ref bucket) = args.s3_bucket {
+        println!("S3 Bucket: {}", bucket);
+        println!("S3 Prefix: {}", args.s3_prefix);
+        if let Some(ref region) = args.s3_region {
+            println!("S3 Region: {}", region);
+        }
+    }
     println!("==============================\n");
-    
+
     let config = ReaderConfig {
         symbol: args.symbol,
         interval_seconds: args.interval,
@@ -76,6 +95,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         duration_seconds: args.duration,
         save_parquet: args.parquet,
         save_jsonl: args.jsonl,
+        s3_bucket: args.s3_bucket,
+        s3_prefix: Some(args.s3_prefix),
+        s3_region: args.s3_region,
     };
     
     let reader = BybitReader::new(config)?;

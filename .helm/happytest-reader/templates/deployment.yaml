@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "happytest-reader.fullname" . }}
+  labels:
+    {{- include "happytest-reader.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "happytest-reader.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "happytest-reader.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "happytest-reader.serviceAccountName" . }}
+      containers:
+        - name: reader
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--symbol"
+            - "$(SYMBOL)"
+            - "--duration"
+            - "$(DURATION)"
+            - "--interval"
+            - "$(INTERVAL)"
+            - "--depth"
+            - "$(DEPTH)"
+            {{- if .Values.reader.parquet }}
+            - "--parquet"
+            {{- end }}
+            {{- if .Values.reader.jsonl }}
+            - "--jsonl"
+            {{- end }}
+            {{- if .Values.reader.testnet }}
+            - "--testnet"
+            {{- end }}
+            {{- if .Values.s3.enabled }}
+            - "--s3-bucket"
+            - "$(S3_BUCKET)"
+            - "--s3-prefix"
+            - "$(S3_PREFIX)"
+            - "--s3-region"
+            - "$(AWS_REGION)"
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "happytest-reader.fullname" . }}
+            {{- if .Values.s3.enabled }}
+            - secretRef:
+                name: {{ include "happytest-reader.secretName" . }}
+            {{- end }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

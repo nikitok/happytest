@@ -151,6 +151,30 @@ fn process_file(
     );
     pnl_report.graph_by_minute(all_trades, Method::Fifo, None, Some(&output_name))?;
 
+    // Generate enhanced equity chart with drawdown and margin metrics
+    let initial_capital = 10000.0; // $10,000 starting capital
+    let equity_prefix = format!("{}_",
+        file_path.file_stem().unwrap_or_default().to_str().unwrap_or("output"));
+    let equity_metrics = pnl_report.graph_equity(
+        all_trades,
+        Method::Fifo,
+        initial_capital,
+        backtest_config.margin_rate,
+        None,
+        Some(&equity_prefix)
+    )?;
+
+    // Print capital requirements summary
+    if !equity_metrics.timestamps.is_empty() {
+        let max_drawdown = equity_metrics.drawdown.iter().cloned().fold(0.0_f64, f64::max);
+        let max_margin = equity_metrics.margin_used.iter().cloned().fold(0.0_f64, f64::max);
+        println!("\n=== Capital Requirements ===");
+        println!("Max Drawdown: ${:.2}", max_drawdown);
+        println!("Max Margin Used: ${:.2}", max_margin);
+        println!("Recommended Capital: ${:.2}", max_margin + max_drawdown * 1.5);
+        println!("============================");
+    }
+
     // Get capital metrics
     let capital_metrics = dashboard.get_capital_metrics(&symbol);
     let mut capital_metrics_map = HashMap::new();

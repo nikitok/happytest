@@ -11,7 +11,7 @@ mod tests {
 }
 
 pub use models::{Method, Record};
-pub use calculator::{PnlReport, Processor};
+pub use calculator::{PnlReport, Processor, EquityMetrics};
 pub use fifo::FifoProcessor;
 pub use position::PositionProcessor;
 pub use unrealized::calculate_unrealized_pnl;

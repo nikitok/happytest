@@ -1,0 +1,66 @@
+# Default values for happytest-reader
+# This is a YAML-formatted file.
+
+# Image configuration
+image:
+  repository: ghcr.io/your-org/happytest/reader
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Reader configuration
+reader:
+  symbol: BTCUSDT
+  duration: 0  # 0 = infinite
+  interval: 600  # 10 minutes
+  depth: 50
+  parquet: true
+  jsonl: false
+  testnet: false
+
+# S3 configuration
+s3:
+  enabled: true
+  bucket: ""  # Required if s3.enabled=true
+  prefix: "orderbook/v1"
+  region: "us-east-1"
+
+# AWS credentials
+# Either use existingSecret OR provide accessKeyId/secretAccessKey
+# For EKS, prefer IRSA (serviceAccount.annotations)
+aws:
+  existingSecret: ""
+  accessKeyId: ""
+  secretAccessKey: ""
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: ""
+  # For EKS IRSA, add:
+  # annotations:
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/happytest-s3-writer
+  annotations: {}
+
+# Resource limits
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+
+# Logging
+logging:
+  level: "info"
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Additional environment variables
+extraEnv: []
+
+# Pod annotations
+podAnnotations: {}

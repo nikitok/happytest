@@ -5,6 +5,7 @@ use chrono::Local;
 use futures_util::{SinkExt, StreamExt};
 use log::{debug, error, info, warn};
 use std::fs::create_dir_all;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::time::interval;
@@ -14,7 +15,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 use super::models::{WsRequest, WsResponse};
 // Import shared types
 use crate::reader::models::OrderbookData;
-use crate::storage::{JsonlWriter, ParquetWriter, StorageWriter, WriterConfig};
+use crate::storage::{JsonlWriter, ParquetWriter, S3Uploader, StorageWriter, WriterConfig};
 
 /// Configuration for the Bybit reader
 #[derive(Debug, Clone)]
@@ -35,6 +36,12 @@ pub struct ReaderConfig {
     pub save_parquet: bool,
     /// Save as JSONL format
     pub save_jsonl: bool,
+    /// S3 bucket for upload (None = disabled)
+    pub s3_bucket: Option<String>,
+    /// S3 key prefix for Athena partitioning
+    pub s3_prefix: Option<String>,
+    /// AWS region for S3
+    pub s3_region: Option<String>,
 }
 
 impl Default for ReaderConfig {
@@ -47,7 +54,10 @@ impl Default for ReaderConfig {
             duration_seconds: 3600, // 1 hour by default
             save_parquet: true,     // Enable Parquet by default
             save_jsonl: true,       // Enable JSONL by default
-            interval_seconds: 10, // Flush every 10 seconds by default
+            interval_seconds: 10,   // Flush every 10 seconds by default
+            s3_bucket: None,        // S3 disabled by default
+            s3_prefix: None,
+            s3_region: None,
         }
     }
 }
@@ -58,6 +68,8 @@ pub struct BybitReader {
     writers: Arc<Mutex<Vec<Box<dyn StorageWriter>>>>,
     start_time: SystemTime,
     data_buffer: Arc<Mutex<Vec<OrderbookData>>>,
+    /// Track the base filename for S3 upload
+    current_base_filename: Arc<Mutex<Option<String>>>,
 }
 
 impl BybitReader {
@@ -71,6 +83,7 @@ impl BybitReader {
             writers: Arc::new(Mutex::new(Vec::new())),
             start_time: SystemTime::now(),
             data_buffer: Arc::new(Mutex::new(Vec::new())),
+            current_base_filename: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -115,6 +128,12 @@ impl BybitReader {
             ..Default::default()
         };
 
+        // Store base filename for S3 upload later
+        {
+            let mut filename_guard = self.current_base_filename.lock().unwrap();
+            *filename_guard = Some(base_filename.clone());
+        }
+
         let mut writers: Vec<Box<dyn StorageWriter>> = Vec::new();
 
         // Add JSONL writer if enabled
@@ -132,6 +151,76 @@ impl BybitReader {
         }
 
         Ok(writers)
+    }
+
+    /// Upload files to S3 if configured
+    async fn upload_to_s3(&self) -> Result<()> {
+        let bucket = match &self.config.s3_bucket {
+            Some(b) => b.clone(),
+            None => return Ok(()), // S3 not configured, skip
+        };
+
+        let prefix = self.config.s3_prefix.clone().unwrap_or_else(|| "orderbook".to_string());
+        let region = self.config.s3_region.clone();
+
+        // Get the base filename
+        let base_filename = {
+            let guard = self.current_base_filename.lock().unwrap();
+            guard.clone()
+        };
+
+        let base_filename = match base_filename {
+            Some(f) => f,
+            None => {
+                warn!("No base filename available for S3 upload");
+                return Ok(());
+            }
+        };
+
+        // Initialize S3 uploader
+        info!("Initializing S3 uploader for bucket: {}", bucket);
+        let s3_uploader = S3Uploader::new(bucket.clone(), prefix, region)
+            .await
+            .context("Failed to initialize S3 uploader")?;
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as i64;
+
+        // Upload Parquet file if it exists
+        if self.config.save_parquet {
+            let parquet_path = format!("{}.parquet", base_filename);
+            let path = Path::new(&parquet_path);
+            if path.exists() {
+                match s3_uploader
+                    .upload_with_partitioning(path, &self.config.symbol, timestamp)
+                    .await
+                {
+                    Ok(s3_uri) => info!("Uploaded Parquet to {}", s3_uri),
+                    Err(e) => error!("Failed to upload Parquet to S3: {}", e),
+                }
+            } else {
+                warn!("Parquet file not found: {}", parquet_path);
+            }
+        }
+
+        // Upload JSONL file if it exists
+        if self.config.save_jsonl {
+            let jsonl_path = format!("{}.jsonl", base_filename);
+            let path = Path::new(&jsonl_path);
+            if path.exists() {
+                match s3_uploader
+                    .upload_with_partitioning(path, &self.config.symbol, timestamp)
+                    .await
+                {
+                    Ok(s3_uri) => info!("Uploaded JSONL to {}", s3_uri),
+                    Err(e) => error!("Failed to upload JSONL to S3: {}", e),
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Write data to all storage writers
@@ -373,6 +462,13 @@ impl BybitReader {
             error!("Failed to close writers: {}", e);
         }
 
+        // Upload to S3 if configured
+        if self.config.s3_bucket.is_some() {
+            if let Err(e) = self.upload_to_s3().await {
+                error!("Failed to upload to S3: {}", e);
+            }
+        }
+
         info!(
             "Reader finished. Total messages: {}, errors: {}",
             message_count, error_count
@@ -589,6 +685,13 @@ impl BybitReader {
         // Close all writers
         if let Err(e) = self.close_writers() {
             error!("Failed to close writers: {}", e);
+        }
+
+        // Upload to S3 if configured
+        if self.config.s3_bucket.is_some() {
+            if let Err(e) = self.upload_to_s3().await {
+                error!("Failed to upload to S3: {}", e);
+            }
         }
 
         info!(
