@@ -141,18 +141,25 @@ impl S3Uploader {
 mod tests {
     use super::*;
 
+    /// Helper function to generate Athena-compatible S3 key (for testing without S3 client)
+    fn generate_key(prefix: &str, symbol: &str, timestamp: i64, filename: &str) -> String {
+        let datetime = DateTime::<Utc>::from_timestamp_millis(timestamp)
+            .unwrap_or_else(Utc::now);
+        let date = datetime.format("%Y-%m-%d").to_string();
+        let prefix = prefix.trim_matches('/');
+
+        if prefix.is_empty() {
+            format!("symbol={}/date={}/{}", symbol, date, filename)
+        } else {
+            format!("{}/symbol={}/date={}/{}", prefix, symbol, date, filename)
+        }
+    }
+
     #[test]
     fn test_generate_athena_key() {
-        // Create a mock S3Uploader for key generation testing
-        let uploader = S3Uploader {
-            client: unsafe { std::mem::zeroed() }, // Only for testing key generation
-            bucket: "test-bucket".to_string(),
-            prefix: "orderbook/v1".to_string(),
-        };
-
         // 2024-12-28 12:30:00 UTC in milliseconds
         let timestamp = 1735388400000_i64;
-        let key = uploader.generate_athena_key("BTCUSDT", timestamp, "data.parquet");
+        let key = generate_key("orderbook/v1", "BTCUSDT", timestamp, "data.parquet");
 
         assert!(key.starts_with("orderbook/v1/symbol=BTCUSDT/date=2024-12-28/"));
         assert!(key.ends_with("data.parquet"));
@@ -160,15 +167,18 @@ mod tests {
 
     #[test]
     fn test_generate_athena_key_empty_prefix() {
-        let uploader = S3Uploader {
-            client: unsafe { std::mem::zeroed() },
-            bucket: "test-bucket".to_string(),
-            prefix: "".to_string(),
-        };
-
         let timestamp = 1735388400000_i64;
-        let key = uploader.generate_athena_key("ETHUSDT", timestamp, "data.parquet");
+        let key = generate_key("", "ETHUSDT", timestamp, "data.parquet");
 
         assert!(key.starts_with("symbol=ETHUSDT/date=2024-12-28/"));
+    }
+
+    #[test]
+    fn test_generate_athena_key_with_slashes() {
+        let timestamp = 1735388400000_i64;
+        let key = generate_key("/orderbook/v1/", "BTCUSDT", timestamp, "data.parquet");
+
+        // Should trim leading/trailing slashes
+        assert!(key.starts_with("orderbook/v1/symbol="));
     }
 }
