@@ -38,8 +38,8 @@ RUN cargo build --release --bin reader 2>/dev/null || true
 # Copy actual source code
 COPY src ./src
 
-# Build the actual binary
-RUN cargo build --release --bin reader
+# Touch source files to force rebuild and build the actual binary
+RUN touch src/lib.rs src/reader/main.rs && cargo build --release --bin reader
 
 # === Runtime stage ===
 FROM debian:bookworm-slim
@@ -48,6 +48,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
