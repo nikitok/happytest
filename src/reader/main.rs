@@ -1,15 +1,29 @@
-use clap::Parser;
-use happytest::reader::{BybitReader, ReaderConfig};
+use clap::{Parser, ValueEnum};
+use happytest::exchange::{BinanceReader, BybitReader, ReaderConfig};
 use tokio_util::sync::CancellationToken;
+
+/// Exchange provider selection
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+enum Provider {
+    /// Bybit exchange (Linear/USDT perpetuals)
+    #[default]
+    Bybit,
+    /// Binance Futures USDT-M
+    Binance,
+}
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "bybit-reader",
-    about = "Fetch orderbook data from Bybit API",
+    name = "orderbook-reader",
+    about = "Fetch orderbook data from exchange APIs (Bybit, Binance)",
     version,
     author
 )]
 struct Args {
+    /// Exchange provider to use
+    #[arg(short, long, default_value = "bybit")]
+    provider: Provider,
+
     /// Symbol to fetch data for (e.g., "BTCUSDT", "ETHUSDT")
     #[arg(short, long)]
     symbol: String,
@@ -67,7 +81,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    println!("=== Bybit Orderbook Reader ===");
+    let provider_name = match args.provider {
+        Provider::Bybit => "Bybit",
+        Provider::Binance => "Binance Futures",
+    };
+
+    println!("=== {} Orderbook Reader ===", provider_name);
+    println!("Provider: {:?}", args.provider);
     println!("Symbol: {}", args.symbol);
     println!("Interval: {} seconds", args.interval);
     println!(
@@ -79,10 +99,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     );
     println!("Output: {}", args.output);
-    println!(
-        "Network: {}",
-        if args.testnet { "testnet" } else { "mainnet" }
-    );
+    if matches!(args.provider, Provider::Bybit) {
+        println!(
+            "Network: {}",
+            if args.testnet { "testnet" } else { "mainnet" }
+        );
+    }
     println!("Depth: {}", args.depth);
     println!(
         "Parquet: {}",
@@ -112,18 +134,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         s3_region: args.s3_region,
     };
 
-    let reader = BybitReader::new(config)?;
-
     // Create a cancellation token for graceful shutdown
     let cancel_token = CancellationToken::new();
     let cancel_clone = cancel_token.clone();
 
-    // Handle Ctrl+C gracefully
-    let reader_handle = tokio::spawn(async move {
-        if let Err(e) = reader.run_with_cancellation(cancel_clone).await {
-            eprintln!("Reader error: {}", e);
+    // Handle Ctrl+C gracefully - spawn reader based on provider
+    let reader_handle = match args.provider {
+        Provider::Bybit => {
+            let reader = BybitReader::new(config)?;
+            tokio::spawn(async move {
+                if let Err(e) = reader.run_with_cancellation(cancel_clone).await {
+                    eprintln!("Reader error: {}", e);
+                }
+            })
         }
-    });
+        Provider::Binance => {
+            let reader = BinanceReader::new(config)?;
+            tokio::spawn(async move {
+                if let Err(e) = reader.run_with_cancellation(cancel_clone).await {
+                    eprintln!("Reader error: {}", e);
+                }
+            })
+        }
+    };
 
     // Set up Ctrl+C handler
     let ctrl_c = tokio::signal::ctrl_c();
