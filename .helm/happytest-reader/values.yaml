@@ -22,8 +22,8 @@ reader:
 # Use this instead of Deployment for reliable S3 uploads
 cronjob:
   enabled: false  # set to true to use CronJob instead of Deployment
-  schedule: "0 * * * *"  # every hour at :00
-  duration: 3600  # run for 1 hour, then upload to S3 and exit
+  schedule: "59 * * * *"  # every hour at :59 (1 min early for startup)
+  duration: 3660  # run for 61 min (overlap ensures no data gaps)
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
 
