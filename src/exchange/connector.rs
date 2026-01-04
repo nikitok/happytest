@@ -91,8 +91,8 @@ pub trait ExchangeConnector: Send + Sync {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExchangeType {
     Bybit,
+    Binance,
     // Future exchanges:
-    // Binance,
     // OKX,
     // Deribit,
 }
@@ -102,6 +102,7 @@ impl ExchangeType {
     pub fn name(&self) -> &'static str {
         match self {
             ExchangeType::Bybit => "Bybit",
+            ExchangeType::Binance => "Binance",
         }
     }
 }
