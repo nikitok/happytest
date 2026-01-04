@@ -9,13 +9,23 @@ image:
 
 # Reader configuration
 reader:
+  provider: bybit  # bybit or binance
   symbol: BTCUSDT
-  duration: 0  # 0 = infinite
-  interval: 600  # 10 minutes
+  duration: 0  # 0 = infinite (for Deployment mode)
+  interval: 600  # flush interval in seconds
   depth: 50
   parquet: true
   jsonl: false
-  testnet: false
+  testnet: false  # only for bybit
+
+# CronJob mode - runs hourly, uploads to S3, restarts
+# Use this instead of Deployment for reliable S3 uploads
+cronjob:
+  enabled: false  # set to true to use CronJob instead of Deployment
+  schedule: "0 * * * *"  # every hour at :00
+  duration: 3600  # run for 1 hour, then upload to S3 and exit
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
 
 # S3 configuration
 s3:

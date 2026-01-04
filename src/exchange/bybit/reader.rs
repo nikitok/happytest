@@ -107,7 +107,7 @@ impl BybitReader {
         };
 
         format!(
-            "{}/{}_{}_{}_{}",
+            "{}/bybit_{}_{}_{}_{}",
             self.config.output_dir,
             self.config.symbol,
             date_str,

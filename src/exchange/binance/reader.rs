@@ -55,7 +55,7 @@ impl BinanceReader {
         };
 
         format!(
-            "{}/{}_{}_{}_binance",
+            "{}/binance_{}_{}_{}_mainnet",
             self.config.output_dir, self.config.symbol, date_str, duration_str,
         )
     }
