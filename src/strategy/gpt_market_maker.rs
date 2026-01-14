@@ -1,7 +1,7 @@
-use crate::core::{Trade, OrderBook};
+use crate::core::{OrderBook, Trade};
 use crate::strategy::Strategy;
-use std::collections::VecDeque;
 use log::info;
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GptMarketMakerConfig {
@@ -94,7 +94,7 @@ impl GptMarketMaker {
         let vwap_window = config.vwap_window;
         let volatility_window = config.volatility_window;
         let momentum_window = config.momentum_window;
-        
+
         Self {
             symbol,
             config,
@@ -113,19 +113,19 @@ impl GptMarketMaker {
     fn update_vwap(&mut self, price: f64, volume: f64) -> Option<f64> {
         self.prices.push_back(price * volume);
         self.volumes.push_back(volume);
-        
+
         if self.prices.len() > self.config.vwap_window {
             self.prices.pop_front();
             self.volumes.pop_front();
         }
-        
+
         if self.volumes.len() < self.config.vwap_window {
             return None;
         }
-        
+
         let sum_prices: f64 = self.prices.iter().sum();
         let sum_volumes: f64 = self.volumes.iter().sum();
-        
+
         if sum_volumes == 0.0 {
             None
         } else {
@@ -155,7 +155,7 @@ impl GptMarketMaker {
 
         let prices: Vec<f64> = self.price_history.iter().cloned().collect();
         let mut returns = Vec::new();
-        
+
         for i in 1..prices.len() {
             let ret = (prices[i] - prices[i - 1]) / prices[i - 1];
             returns.push(ret);
@@ -166,10 +166,12 @@ impl GptMarketMaker {
         }
 
         let mean_return = returns.iter().sum::<f64>() / returns.len() as f64;
-        let variance = returns.iter()
+        let variance = returns
+            .iter()
             .map(|r| (r - mean_return).powi(2))
-            .sum::<f64>() / returns.len() as f64;
-        
+            .sum::<f64>()
+            / returns.len() as f64;
+
         variance.sqrt()
     }
 
@@ -185,28 +187,52 @@ impl GptMarketMaker {
     fn check_market_conditions(&mut self, current_time: i64) -> (bool, String) {
         // Check volatility cooldown
         if current_time - self.last_high_volatility_time < self.config.volatility_cooldown_ms {
-            let time_left = (self.config.volatility_cooldown_ms - (current_time - self.last_high_volatility_time)) as f64 / 1000.0;
-            return (false, format!("VOLATILITY_COOLDOWN: {:.1}s remaining", time_left));
+            let time_left = (self.config.volatility_cooldown_ms
+                - (current_time - self.last_high_volatility_time))
+                as f64
+                / 1000.0;
+            return (
+                false,
+                format!("VOLATILITY_COOLDOWN: {:.1}s remaining", time_left),
+            );
         }
 
         // Check momentum cooldown
         if current_time - self.last_strong_momentum_time < self.config.momentum_cooldown_ms {
-            let time_left = (self.config.momentum_cooldown_ms - (current_time - self.last_strong_momentum_time)) as f64 / 1000.0;
-            return (false, format!("MOMENTUM_COOLDOWN: {:.1}s remaining", time_left));
+            let time_left = (self.config.momentum_cooldown_ms
+                - (current_time - self.last_strong_momentum_time))
+                as f64
+                / 1000.0;
+            return (
+                false,
+                format!("MOMENTUM_COOLDOWN: {:.1}s remaining", time_left),
+            );
         }
 
         // Calculate current volatility - only check if we have enough data
         let volatility = self.calculate_volatility();
         if volatility > 0.0 && volatility > self.config.max_volatility_threshold {
             self.last_high_volatility_time = current_time;
-            return (false, format!("HIGH_VOLATILITY: {:.4} > {:.4}", volatility, self.config.max_volatility_threshold));
+            return (
+                false,
+                format!(
+                    "HIGH_VOLATILITY: {:.4} > {:.4}",
+                    volatility, self.config.max_volatility_threshold
+                ),
+            );
         }
 
-        // Calculate current momentum - only check if we have enough data  
+        // Calculate current momentum - only check if we have enough data
         let momentum = self.calculate_momentum();
         if momentum != 0.0 && momentum.abs() > self.config.momentum_threshold {
             self.last_strong_momentum_time = current_time;
-            return (false, format!("STRONG_MOMENTUM: {:.4} > {:.4}", momentum, self.config.momentum_threshold));
+            return (
+                false,
+                format!(
+                    "STRONG_MOMENTUM: {:.4} > {:.4}",
+                    momentum, self.config.momentum_threshold
+                ),
+            );
         }
 
         (true, "OK".to_string())
@@ -217,12 +243,12 @@ impl GptMarketMaker {
             return 0.0;
         }
 
-        let total_value: f64 = self.positions.iter()
+        let total_value: f64 = self
+            .positions
+            .iter()
             .map(|pos| pos.entry_price * pos.quantity)
             .sum();
-        let total_quantity: f64 = self.positions.iter()
-            .map(|pos| pos.quantity)
-            .sum();
+        let total_quantity: f64 = self.positions.iter().map(|pos| pos.quantity).sum();
 
         if total_quantity > 0.0 {
             total_value / total_quantity
@@ -259,19 +285,36 @@ impl GptMarketMaker {
         }
 
         if oldest_position_age > self.config.max_position_age_ms {
-            return (true, format!("POSITION_AGE: {:.1}s", oldest_position_age as f64 / 1000.0));
+            return (
+                true,
+                format!("POSITION_AGE: {:.1}s", oldest_position_age as f64 / 1000.0),
+            );
         }
 
-        if inventory_ratio >= self.config.inventory_reduction_threshold {
-            if total_pnl_bps >= self.config.min_profit_bps {
-                return (true, format!("INVENTORY_REDUCTION: {:.1}% full, {:.1} bps profit", inventory_ratio * 100.0, total_pnl_bps));
-            }
+        if inventory_ratio >= self.config.inventory_reduction_threshold
+            && total_pnl_bps >= self.config.min_profit_bps
+        {
+            return (
+                true,
+                format!(
+                    "INVENTORY_REDUCTION: {:.1}% full, {:.1} bps profit",
+                    inventory_ratio * 100.0,
+                    total_pnl_bps
+                ),
+            );
         }
 
-        if inventory_ratio >= self.config.aggressive_close_threshold {
-            if total_pnl_bps >= -self.config.min_profit_bps {
-                return (true, format!("AGGRESSIVE_CLOSE: {:.1}% full, {:.1} bps", inventory_ratio * 100.0, total_pnl_bps));
-            }
+        if inventory_ratio >= self.config.aggressive_close_threshold
+            && total_pnl_bps >= -self.config.min_profit_bps
+        {
+            return (
+                true,
+                format!(
+                    "AGGRESSIVE_CLOSE: {:.1}% full, {:.1} bps",
+                    inventory_ratio * 100.0,
+                    total_pnl_bps
+                ),
+            );
         }
 
         (false, String::new())
@@ -295,18 +338,14 @@ impl GptMarketMaker {
         if self.price_history.len() > self.config.volatility_window {
             self.price_history.pop_front();
         }
-        
+
         self.momentum_prices.push_back(mid_price);
         if self.momentum_prices.len() > self.config.momentum_window {
             self.momentum_prices.pop_front();
         }
 
         // Update VWAP
-        let vwap = self.update_vwap(mid_price, bid_vol + ask_vol);
-        if vwap.is_none() {
-            return None;
-        }
-        let vwap = vwap.unwrap();
+        let vwap = self.update_vwap(mid_price, bid_vol + ask_vol)?;
 
         // Check market conditions
         let (can_trade, market_condition) = self.check_market_conditions(current_time);
@@ -318,7 +357,8 @@ impl GptMarketMaker {
             let (side, limit_price) = if self.net_inventory > 0.0 {
                 // We're long, so sell to close
                 let price = if self.config.use_limit_orders {
-                    best_bid.max(self.avg_entry_price * (1.0 + self.config.min_profit_bps / 10000.0))
+                    best_bid
+                        .max(self.avg_entry_price * (1.0 + self.config.min_profit_bps / 10000.0))
                 } else {
                     best_bid
                 };
@@ -326,7 +366,8 @@ impl GptMarketMaker {
             } else {
                 // We're short, so buy to close
                 let price = if self.config.use_limit_orders {
-                    best_ask.min(self.avg_entry_price * (1.0 - self.config.min_profit_bps / 10000.0))
+                    best_ask
+                        .min(self.avg_entry_price * (1.0 - self.config.min_profit_bps / 10000.0))
                 } else {
                     best_ask
                 };
@@ -337,14 +378,16 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                order_book.symbol.clone(),
+                self.symbol.clone(),
                 side.to_string(),
                 limit_price,
                 quantity,
             );
 
-            info!("GPT Maker CLOSING: {} {} @ {:.4} (reason: {}, inventory: {})",
-                side, quantity, limit_price, close_reason, self.net_inventory);
+            info!(
+                "GPT Maker CLOSING: {} {} @ {:.4} (reason: {}, inventory: {})",
+                side, quantity, limit_price, close_reason, self.net_inventory
+            );
 
             return Some(trade);
         }
@@ -360,9 +403,11 @@ impl GptMarketMaker {
         let inventory_ratio = self.net_inventory.abs() / self.config.max_inventory;
         let adjusted_obi_threshold = self.config.obi_threshold * (1.0 + inventory_ratio);
 
-        if obi > adjusted_obi_threshold && 
-           mid_price < vwap && 
-           self.net_inventory < self.config.max_inventory * self.config.inventory_reduction_threshold {
+        if obi > adjusted_obi_threshold
+            && mid_price < vwap
+            && self.net_inventory
+                < self.config.max_inventory * self.config.inventory_reduction_threshold
+        {
             // Buy signal
             let limit_price = if self.config.use_limit_orders {
                 best_bid * (1.0 - self.config.limit_order_spread_bps / 10000.0)
@@ -372,19 +417,23 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                order_book.symbol.clone(),
+                self.symbol.clone(),
                 "Buy".to_string(),
                 limit_price,
                 self.config.fix_order_volume,
             );
 
-            info!("GPT Maker OPENING: Buy {} @ {:.4} (OBI: {:.3}, VWAP: {:.4}, inventory: {})",
-                self.config.fix_order_volume, limit_price, obi, vwap, self.net_inventory);
+            info!(
+                "GPT Maker OPENING: Buy {} @ {:.4} (OBI: {:.3}, VWAP: {:.4}, inventory: {})",
+                self.config.fix_order_volume, limit_price, obi, vwap, self.net_inventory
+            );
 
             Some(trade)
-        } else if obi < -adjusted_obi_threshold && 
-                  mid_price > vwap && 
-                  self.net_inventory > -self.config.max_inventory * self.config.inventory_reduction_threshold {
+        } else if obi < -adjusted_obi_threshold
+            && mid_price > vwap
+            && self.net_inventory
+                > -self.config.max_inventory * self.config.inventory_reduction_threshold
+        {
             // Sell signal
             let limit_price = if self.config.use_limit_orders {
                 best_ask * (1.0 + self.config.limit_order_spread_bps / 10000.0)
@@ -394,14 +443,16 @@ impl GptMarketMaker {
 
             let trade = Trade::new(
                 current_time,
-                order_book.symbol.clone(),
+                self.symbol.clone(),
                 "Sell".to_string(),
                 limit_price,
                 self.config.fix_order_volume,
             );
 
-            info!("GPT Maker OPENING: Sell {} @ {:.4} (OBI: {:.3}, VWAP: {:.4}, inventory: {})",
-                self.config.fix_order_volume, limit_price, obi, vwap, self.net_inventory);
+            info!(
+                "GPT Maker OPENING: Sell {} @ {:.4} (OBI: {:.3}, VWAP: {:.4}, inventory: {})",
+                self.config.fix_order_volume, limit_price, obi, vwap, self.net_inventory
+            );
 
             Some(trade)
         } else {
@@ -415,8 +466,8 @@ impl GptMarketMaker {
         }
 
         // Check if this is a closing trade
-        let is_closing = (self.net_inventory > 0.0 && trade.side == "Sell") ||
-                        (self.net_inventory < 0.0 && trade.side == "Buy");
+        let is_closing = (self.net_inventory > 0.0 && trade.side == "Sell")
+            || (self.net_inventory < 0.0 && trade.side == "Buy");
 
         if is_closing {
             // Remove positions being closed (FIFO)
@@ -428,8 +479,9 @@ impl GptMarketMaker {
                     break;
                 }
 
-                if (self.net_inventory > 0.0 && pos.side == "Buy") ||
-                   (self.net_inventory < 0.0 && pos.side == "Sell") {
+                if (self.net_inventory > 0.0 && pos.side == "Buy")
+                    || (self.net_inventory < 0.0 && pos.side == "Sell")
+                {
                     if pos.quantity <= remaining_to_close {
                         positions_to_remove.push(i);
                         remaining_to_close -= pos.quantity;
@@ -478,13 +530,15 @@ impl Strategy for GptMarketMaker {
     fn update_position(&mut self, trade: &Trade, filled: bool) {
         self.update_position(trade, filled)
     }
-    
-    fn get_position(&self, _symbol: &str) -> f64 {
-        // Return the net inventory regardless of symbol
-        // since we're now handling multiple symbols
-        self.net_inventory
+
+    fn get_position(&self, symbol: &str) -> f64 {
+        if self.symbol == symbol {
+            self.net_inventory
+        } else {
+            0.0
+        }
     }
-    
+
     fn reset(&mut self) {
         self.prices.clear();
         self.volumes.clear();

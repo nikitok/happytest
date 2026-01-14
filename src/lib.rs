@@ -1,20 +1,24 @@
-pub mod core;
-pub mod strategy;
+pub mod analytics;
 pub mod backtest;
-pub mod utils;
-pub mod trading;
 pub mod config;
-pub mod pnl;
+pub mod core;
+pub mod domain;
+pub mod exchange;
 pub mod reader;
+pub mod storage;
+pub mod strategy;
+pub mod utils; // Deprecated: use storage instead
 
 // Re-export commonly used types
-pub use core::{
-    Trade, OrderBook, PnLResult, ClosedTrade, CapitalMetrics,
-    TradeState, TradeError, Result, DataSource, TradeExecutor, ExecutionStats
+pub use backtest::{
+    BacktestConfig, BacktestEngine, BacktestTradeEmitter, TradeDashboard, TradeEmitter,
 };
-pub use strategy::{Strategy, GptMarketMaker, GptMarketMakerConfig};
-pub use backtest::{TradeDashboard, BacktestEngine};
-pub use utils::{FileDataSource, ParquetDataSource, OrderBookMessage, MultiFileDataSource};
-pub use trading::{TradeEmitter, BacktestTradeEmitter, BacktestConfig};
-pub use config::{AppConfig, validate_config};
-
+pub use config::{validate_config, AppConfig};
+pub use core::{
+    CapitalMetrics, ClosedTrade, DataSource, ExecutionStats, OrderBook, PnLResult, Result, Trade,
+    TradeError, TradeExecutor, TradeState,
+};
+pub use domain::{MomentumDetector, OrderBookImbalance, Position, Side, VolatilityDetector, Vwap};
+pub use exchange::{ExchangeConfig, ExchangeConnector, ExchangeError, ExchangeType};
+pub use strategy::{GptMarketMaker, GptMarketMakerConfig, Strategy};
+pub use utils::{FileDataSource, OrderBookMessage, ParquetDataSource};

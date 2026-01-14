@@ -1,0 +1,579 @@
+[2025-12-27 13:12:33] Daemon started (interval: 5s, auto-commit: false, auto-push: false)
+[2025-12-27 13:12:33] Using database: /Users/noviiden/java/projects/happytest/.beads/beads.db
+[2025-12-27 13:12:33] Database opened: /Users/noviiden/java/projects/happytest/.beads/beads.db
+[2025-12-27 13:12:33] Upgrading .beads/.gitignore...
+[2025-12-27 13:12:33] Warning: failed to upgrade .gitignore: open .beads/.gitignore: no such file or directory
+[2025-12-27 13:12:33] Repository fingerprint validated: 82c70bc1
+[2025-12-27 13:12:33] Starting RPC server: /Users/noviiden/java/projects/happytest/.beads/bd.sock
+[2025-12-27 13:12:33] RPC server ready (socket listening)
+[2025-12-27 13:12:33] Registered in global registry
+[2025-12-27 13:12:33] Starting sync cycle...
+[2025-12-27 13:12:33] Exported to JSONL
+[2025-12-27 13:12:34] Sync branch pull failed: failed to create worktree: failed to create worktree: exit status 128
+Output: Preparing worktree (checking out 'main')
+fatal: 'main' is already checked out at '/Users/noviiden/java/projects/happytest'
+
+[2025-12-27 13:12:34] Monitoring parent process (PID 0)
+[2025-12-27 13:12:34] Using event-driven mode
+[2025-12-27 13:13:34] Health check: database integrity issue: *** in database main ***
+Freelist: freelist leaf count too big on page 62
+[2025-12-27 13:14:34] Health check: database integrity issue: *** in database main ***
+Freelist: freelist leaf count too big on page 62
+[2025-12-27 13:15:34] Health check: database integrity issue: *** in database main ***
+Freelist: freelist leaf count too big on page 62
+[2025-12-27 13:16:04] Received signal terminated, shutting down...
+time=2025-12-27T13:19:10.046+02:00 level=INFO msg="Daemon started (interval: %v, auto-commit: %v, auto-push: %v)" !BADKEY=5s !BADKEY=false !BADKEY=false
+time=2025-12-27T13:19:10.046+02:00 level=INFO msg="using database" path=/Users/noviiden/java/projects/happytest/.beads/beads.db
+time=2025-12-27T13:19:10.051+02:00 level=INFO msg="database opened" path=/Users/noviiden/java/projects/happytest/.beads/beads.db freshness_checking=true
+time=2025-12-27T13:19:10.051+02:00 level=INFO msg="upgrading .beads/.gitignore"
+time=2025-12-27T13:19:10.051+02:00 level=WARN msg="failed to upgrade .gitignore" error="open .beads/.gitignore: no such file or directory"
+time=2025-12-27T13:19:10.062+02:00 level=INFO msg="Repository fingerprint validated: %s" !BADKEY=82c70bc1
+time=2025-12-27T13:19:10.062+02:00 level=INFO msg="starting RPC server" socket=/Users/noviiden/java/projects/happytest/.beads/bd.sock
+time=2025-12-27T13:19:10.063+02:00 level=INFO msg="RPC server ready (socket listening)"
+time=2025-12-27T13:19:10.069+02:00 level=INFO msg="registered in global registry"
+time=2025-12-27T13:19:10.069+02:00 level=INFO msg="Starting %s..." !BADKEY="sync cycle"
+time=2025-12-27T13:19:10.070+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:19:12.090+02:00 level=INFO msg="Pulled sync branch %s" !BADKEY=main
+time=2025-12-27T13:19:12.111+02:00 level=INFO msg="Imported from JSONL"
+time=2025-12-27T13:19:12.129+02:00 level=INFO msg="Sync cycle complete"
+time=2025-12-27T13:19:12.129+02:00 level=INFO msg="monitoring parent process" pid=0
+time=2025-12-27T13:19:12.129+02:00 level=INFO msg="using event-driven mode"
+time=2025-12-27T13:19:12.139+02:00 level=INFO msg="Auto-pull disabled: use 'git pull' manually to sync remote changes"
+time=2025-12-27T13:19:12.139+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-pu0
+time=2025-12-27T13:19:12.641+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:19:12.641+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:19:12.642+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:19:12.642+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:19:12.642+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:19:12.693+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:19:12.693+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:19:13.695+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:19:13.695+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:19:13.695+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:20:07.585+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-3uj
+time=2025-12-27T13:20:07.747+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-nwd
+time=2025-12-27T13:20:07.902+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-phf
+time=2025-12-27T13:20:08.069+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-qtv
+time=2025-12-27T13:20:08.234+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-u59
+time=2025-12-27T13:20:08.391+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-3uy
+time=2025-12-27T13:20:08.552+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-b0p
+time=2025-12-27T13:20:08.714+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-0q8
+time=2025-12-27T13:20:08.892+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-50m
+time=2025-12-27T13:20:09.068+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-9x9
+time=2025-12-27T13:20:09.569+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:20:09.569+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:20:09.573+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:20:09.573+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:20:09.573+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:20:09.624+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:20:09.624+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:20:10.626+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:20:10.627+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:20:10.627+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:20:30.084+02:00 level=INFO msg="Mutation detected: %s %s" create=happytest-0ge
+time=2025-12-27T13:20:30.201+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-3uj
+time=2025-12-27T13:20:30.306+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-nwd
+time=2025-12-27T13:20:30.423+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-phf
+time=2025-12-27T13:20:30.536+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-qtv
+time=2025-12-27T13:20:30.654+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-u59
+time=2025-12-27T13:20:30.765+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-3uy
+time=2025-12-27T13:20:30.881+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-b0p
+time=2025-12-27T13:20:30.988+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-0q8
+time=2025-12-27T13:20:31.105+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-50m
+time=2025-12-27T13:20:31.219+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-9x9
+time=2025-12-27T13:20:31.720+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:20:31.720+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:20:31.722+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:20:31.722+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:20:31.722+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:20:31.773+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:20:31.773+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:20:32.775+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:20:32.775+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:20:32.776+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:22:47.128+02:00 level=INFO msg="Mutation detected: %s %s" update=happytest-0ge
+time=2025-12-27T13:22:47.629+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:22:47.629+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:22:47.633+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:22:47.633+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:22:47.633+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:22:47.684+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:22:47.684+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:22:48.686+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:22:48.687+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:22:48.687+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:23:39.242+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:23:39.293+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:23:39.293+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:23:40.295+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:23:40.295+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:23:40.295+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T13:23:40.315+02:00 level=INFO msg="⚠️  WARNING: Uncommitted local changes detected in %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:23:40.316+02:00 level=INFO msg="   Pulling from remote may overwrite local unpushed changes."
+time=2025-12-27T13:23:40.316+02:00 level=INFO msg="   Consider running 'bd sync' to commit and push your changes first."
+time=2025-12-27T13:23:41.977+02:00 level=INFO msg="Pulled sync branch %s" !BADKEY=main
+time=2025-12-27T13:23:41.985+02:00 level=INFO msg="Imported from JSONL"
+time=2025-12-27T13:23:41.987+02:00 level=INFO msg="Auto-import complete"
+time=2025-12-27T13:25:12.138+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:25:12.139+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:25:54.381+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:25:54.432+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:25:54.432+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:25:55.434+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:25:55.435+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:25:55.435+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T13:25:55.454+02:00 level=INFO msg="⚠️  WARNING: Uncommitted local changes detected in %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:25:55.454+02:00 level=INFO msg="   Pulling from remote may overwrite local unpushed changes."
+time=2025-12-27T13:25:55.454+02:00 level=INFO msg="   Consider running 'bd sync' to commit and push your changes first."
+time=2025-12-27T13:25:55.468+02:00 level=INFO msg="Sync branch pull failed: %v (backoff: %v)" !BADKEY="failed to get sync branch: failed to get sync.branch from config: get config: sqlite3: database disk image is malformed" !BADKEY=30s
+time=2025-12-27T13:26:12.138+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:26:12.138+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:26:38.796+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:26:38.847+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:26:38.847+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:26:39.849+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:26:39.849+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:26:39.850+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T13:26:39.863+02:00 level=INFO msg="⚠️  WARNING: Uncommitted local changes detected in %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:26:39.863+02:00 level=INFO msg="   Pulling from remote may overwrite local unpushed changes."
+time=2025-12-27T13:26:39.863+02:00 level=INFO msg="   Consider running 'bd sync' to commit and push your changes first."
+time=2025-12-27T13:26:39.876+02:00 level=INFO msg="Sync branch pull failed: %v (backoff: %v)" !BADKEY="failed to get sync branch: failed to get sync.branch from config: get config: sqlite3: database disk image is malformed" !BADKEY=1m0s
+time=2025-12-27T13:27:12.137+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:27:12.137+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:28:12.137+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:28:12.137+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:29:12.139+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:29:12.139+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:30:12.136+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:30:12.136+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:31:12.136+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:31:12.137+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:32:12.138+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:32:12.139+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:33:12.135+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:33:12.135+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:34:12.135+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:34:12.135+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:34:23.706+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:34:23.756+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:34:23.756+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:34:24.758+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:34:24.759+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:34:24.759+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T13:34:24.778+02:00 level=INFO msg="⚠️  WARNING: Uncommitted local changes detected in %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:34:24.778+02:00 level=INFO msg="   Pulling from remote may overwrite local unpushed changes."
+time=2025-12-27T13:34:24.778+02:00 level=INFO msg="   Consider running 'bd sync' to commit and push your changes first."
+time=2025-12-27T13:34:24.789+02:00 level=INFO msg="Sync branch pull failed: %v (backoff: %v)" !BADKEY="failed to get sync branch: failed to get sync.branch from config: get config: sqlite3: database disk image is malformed" !BADKEY=2m0s
+time=2025-12-27T13:34:42.553+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:34:42.604+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:34:42.604+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:34:43.605+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:34:43.606+02:00 level=INFO msg="Skipping %s: in backoff period" !BADKEY=auto-import
+time=2025-12-27T13:34:56.627+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:34:56.677+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:34:56.677+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:34:57.679+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:34:57.679+02:00 level=INFO msg="Skipping %s: in backoff period" !BADKEY=auto-import
+time=2025-12-27T13:35:12.134+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:35:12.134+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:36:12.133+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:36:12.133+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:37:12.140+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:37:12.141+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:38:12.145+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:38:12.146+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:39:12.145+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:39:12.145+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:40:12.145+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:40:12.146+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:41:12.144+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:41:12.145+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:42:12.144+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:42:12.144+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:43:12.144+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:43:12.145+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:44:12.144+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sqlite3: database disk image is malformed"
+time=2025-12-27T13:44:12.144+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sqlite3: database disk image is malformed"
+time=2025-12-27T13:45:43.026+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-0ge
+time=2025-12-27T13:45:43.070+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-0q8
+time=2025-12-27T13:45:43.110+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-3uj
+time=2025-12-27T13:45:43.150+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-3uy
+time=2025-12-27T13:45:43.190+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-50m
+time=2025-12-27T13:45:43.231+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-9x9
+time=2025-12-27T13:45:43.271+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-b0p
+time=2025-12-27T13:45:43.310+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-nwd
+time=2025-12-27T13:45:43.351+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-phf
+time=2025-12-27T13:45:43.391+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-pu0
+time=2025-12-27T13:45:43.431+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-qtv
+time=2025-12-27T13:45:43.472+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-u59
+time=2025-12-27T13:45:43.973+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:45:43.973+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:45:43.982+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:45:43.983+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:45:43.983+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:45:44.034+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:45:44.034+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:45:45.036+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:45:45.036+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:45:45.036+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:53:38.821+02:00 level=INFO msg="Git HEAD change detected: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.git/HEAD
+time=2025-12-27T13:53:39.823+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:53:39.823+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:53:39.824+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T13:53:46.839+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-pu0
+time=2025-12-27T13:53:46.966+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-3uj
+time=2025-12-27T13:53:47.467+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T13:53:47.467+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T13:53:47.472+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T13:53:47.472+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T13:53:47.472+02:00 level=INFO msg="Export complete"
+time=2025-12-27T13:53:47.523+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T13:53:47.524+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T13:53:48.526+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T13:53:48.526+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T13:53:48.526+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:06:44.429+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:06:44.480+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:06:44.480+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:06:45.482+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:06:45.483+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:06:45.484+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:06:50.083+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-3uj
+time=2025-12-27T14:06:50.584+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T14:06:50.584+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T14:06:50.586+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T14:06:50.586+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:06:50.586+02:00 level=INFO msg="Export complete"
+time=2025-12-27T14:06:50.636+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:06:50.636+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:06:51.638+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:06:51.639+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:06:51.639+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:07:03.297+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-nwd
+time=2025-12-27T14:07:03.798+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T14:07:03.798+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T14:07:03.800+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T14:07:03.800+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:07:03.800+02:00 level=INFO msg="Export complete"
+time=2025-12-27T14:07:03.851+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:07:03.851+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:07:04.853+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:07:04.854+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:07:04.854+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:10:58.430+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:10:58.482+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:10:58.482+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:10:59.484+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:10:59.484+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:10:59.485+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:11:13.117+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-nwd
+time=2025-12-27T14:11:13.375+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-phf
+time=2025-12-27T14:11:13.876+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T14:11:13.876+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T14:11:13.879+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T14:11:13.879+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:11:13.879+02:00 level=INFO msg="Export complete"
+time=2025-12-27T14:11:13.930+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:11:13.930+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:11:14.932+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:11:14.932+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:11:14.933+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:56:27.767+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:56:27.817+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:56:27.817+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:56:28.819+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:56:28.820+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:56:28.820+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:56:46.377+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-phf
+time=2025-12-27T14:56:46.708+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-qtv
+time=2025-12-27T14:56:47.209+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T14:56:47.209+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T14:56:47.214+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T14:56:47.214+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:56:47.214+02:00 level=INFO msg="Export complete"
+time=2025-12-27T14:56:47.265+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:56:47.265+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:56:48.267+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:56:48.267+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:56:48.267+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T14:59:11.591+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:59:11.641+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:59:11.641+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:59:12.642+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:59:12.642+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:59:12.642+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T14:59:14.555+02:00 level=INFO msg="Pulled sync branch %s" !BADKEY=main
+time=2025-12-27T14:59:14.560+02:00 level=INFO msg="Imported from JSONL"
+time=2025-12-27T14:59:14.560+02:00 level=INFO msg="Auto-import complete"
+time=2025-12-27T14:59:32.988+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-qtv
+time=2025-12-27T14:59:33.348+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-0q8
+time=2025-12-27T14:59:33.850+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T14:59:33.850+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T14:59:33.855+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T14:59:33.855+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T14:59:33.855+02:00 level=INFO msg="Export complete"
+time=2025-12-27T14:59:33.906+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T14:59:33.906+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T14:59:34.907+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T14:59:34.907+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T14:59:34.907+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:01:03.865+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:01:03.916+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:01:03.917+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:01:04.919+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:01:04.919+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:01:04.920+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:01:15.385+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-0q8
+time=2025-12-27T15:01:15.886+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:01:15.886+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:01:15.894+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:01:15.894+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:01:15.894+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:01:15.944+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:01:15.944+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:01:16.946+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:01:16.946+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:01:16.947+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:07:09.591+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sql: database is closed"
+time=2025-12-27T15:07:09.591+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sql: database is closed"
+time=2025-12-27T15:16:51.439+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-50m
+time=2025-12-27T15:16:51.941+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:16:51.941+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:16:51.945+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:16:51.945+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:16:51.946+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:16:51.997+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:16:51.997+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:16:52.999+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:16:52.999+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:16:53.000+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:18:09.595+02:00 level=INFO msg="Health check: metadata read failed: %v" !BADKEY="get metadata: sql: database is closed"
+time=2025-12-27T15:18:09.595+02:00 level=INFO msg="Health check: database integrity check failed: %v" !BADKEY="sql: database is closed"
+time=2025-12-27T15:18:38.929+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:18:38.981+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:18:38.981+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:18:39.983+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:18:39.983+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:18:39.984+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:18:49.257+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-50m
+time=2025-12-27T15:18:49.599+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-9x9
+time=2025-12-27T15:18:50.100+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:18:50.100+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:18:50.102+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:18:50.102+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:18:50.102+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:18:50.153+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:18:50.153+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:18:51.156+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:18:51.156+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:18:51.156+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:21:36.830+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:21:36.881+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:21:36.881+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:21:37.882+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:21:37.882+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:21:37.883+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:21:47.011+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-9x9
+time=2025-12-27T15:21:47.513+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:21:47.513+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:21:47.520+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:21:47.520+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:21:47.520+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:21:47.571+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:21:47.571+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:21:48.572+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:21:48.572+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:21:48.572+02:00 level=INFO msg="JSONL content changed, proceeding with %s..." !BADKEY=auto-import
+time=2025-12-27T15:21:48.587+02:00 level=INFO msg="⚠️  WARNING: Uncommitted local changes detected in %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:21:48.587+02:00 level=INFO msg="   Pulling from remote may overwrite local unpushed changes."
+time=2025-12-27T15:21:48.587+02:00 level=INFO msg="   Consider running 'bd sync' to commit and push your changes first."
+time=2025-12-27T15:21:50.549+02:00 level=INFO msg="Pulled sync branch %s" !BADKEY=main
+time=2025-12-27T15:21:50.552+02:00 level=INFO msg="Imported from JSONL"
+time=2025-12-27T15:21:50.552+02:00 level=INFO msg="Auto-import complete"
+time=2025-12-27T15:22:19.297+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:22:19.349+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:22:19.349+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:22:20.351+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:22:20.351+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:22:20.353+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:22:44.012+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:22:44.063+02:00 level=INFO msg="JSONL still missing after %v, retrying..." !BADKEY=50ms
+time=2025-12-27T15:22:44.164+02:00 level=INFO msg="JSONL still missing after %v, retrying..." !BADKEY=100ms
+time=2025-12-27T15:22:44.366+02:00 level=INFO msg="JSONL still missing after %v, retrying..." !BADKEY=200ms
+time=2025-12-27T15:22:44.767+02:00 level=INFO msg="JSONL still missing after %v, retrying..." !BADKEY=400ms
+time=2025-12-27T15:22:44.767+02:00 level=INFO msg="Failed to re-establish JSONL watch after all retries"
+time=2025-12-27T15:22:44.767+02:00 level=INFO msg="Git HEAD change detected: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.git/HEAD
+time=2025-12-27T15:22:45.769+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:22:45.769+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:22:45.769+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:30:02.186+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-du0
+time=2025-12-27T15:30:02.687+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:30:02.687+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:30:02.693+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:30:02.693+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:30:02.694+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:30:03.696+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:30:03.696+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:30:03.696+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:30:29.331+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-y2p
+time=2025-12-27T15:30:29.558+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-uz6
+time=2025-12-27T15:30:29.802+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-hbj
+time=2025-12-27T15:30:30.042+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-7hi
+time=2025-12-27T15:30:30.294+02:00 level=INFO msg="Mutation detected: %s %s" create=HFT-hb1
+time=2025-12-27T15:30:30.795+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:30:30.795+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:30:30.797+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:30:30.797+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:30:30.798+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:30:30.848+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:30:30.848+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:30:31.850+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:30:31.850+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:30:31.851+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:30:46.406+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-y2p
+time=2025-12-27T15:30:46.486+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-uz6
+time=2025-12-27T15:30:46.664+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-hbj
+time=2025-12-27T15:30:46.844+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-7hi
+time=2025-12-27T15:30:47.032+02:00 level=INFO msg="Mutation detected: %s %s" update=HFT-hb1
+time=2025-12-27T15:30:47.533+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:30:47.533+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:30:47.540+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:30:47.540+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:30:47.540+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:30:47.591+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:30:47.591+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:30:48.593+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:30:48.594+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:30:48.595+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:31:04.803+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-du0
+time=2025-12-27T15:31:05.303+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:31:05.303+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:31:05.311+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:31:05.311+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:31:05.312+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:31:05.362+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:31:05.363+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:31:06.364+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:31:06.364+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:31:06.364+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:31:25.131+02:00 level=INFO msg="Git HEAD change detected: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.git/HEAD
+time=2025-12-27T15:31:26.132+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:31:26.132+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:31:26.133+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:31:35.661+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-y2p
+time=2025-12-27T15:31:36.162+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:31:36.162+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:31:36.168+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:31:36.168+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:31:36.168+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:31:36.219+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:31:36.219+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:31:37.221+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:31:37.222+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:31:37.222+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:35:11.490+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:35:11.541+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:35:11.542+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:35:12.543+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:35:12.543+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:35:12.544+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:35:21.693+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-y2p
+time=2025-12-27T15:35:21.783+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-uz6
+time=2025-12-27T15:35:22.284+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:35:22.284+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:35:22.291+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:35:22.291+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:35:22.291+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:35:22.342+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:35:22.342+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:35:23.344+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:35:23.345+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:35:23.346+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:36:45.616+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:36:45.667+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:36:45.667+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:36:46.668+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:36:46.669+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:36:46.669+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:36:55.644+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-uz6
+time=2025-12-27T15:36:55.731+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-hb1
+time=2025-12-27T15:36:56.233+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:36:56.233+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:36:56.241+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:36:56.241+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:36:56.241+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:36:56.292+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:36:56.292+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:36:57.294+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:36:57.294+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:36:57.295+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:37:51.701+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:37:51.752+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:37:51.752+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:37:52.753+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:37:52.753+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:37:52.754+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:38:01.023+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-hb1
+time=2025-12-27T15:38:01.524+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:38:01.525+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:38:01.531+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:38:01.531+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:38:01.531+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:38:01.582+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:38:01.582+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:38:02.583+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:38:02.584+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:38:02.584+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:38:08.365+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:38:08.417+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:38:08.417+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:38:09.418+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:38:09.418+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:38:09.418+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:38:43.739+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-hbj
+time=2025-12-27T15:38:44.240+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:38:44.240+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:38:44.245+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:38:44.245+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:38:44.245+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:38:44.296+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:38:44.296+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:38:45.298+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:38:45.299+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:38:45.300+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:40:47.521+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:40:47.572+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:40:47.572+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:40:48.574+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:40:48.574+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:40:48.575+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:40:57.703+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-hbj
+time=2025-12-27T15:40:57.894+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-7hi
+time=2025-12-27T15:40:58.395+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:40:58.395+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:40:58.401+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:40:58.401+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:40:58.401+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:40:58.452+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:40:58.452+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:40:59.454+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:40:59.454+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:40:59.455+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:42:16.712+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:42:16.763+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:42:16.763+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:42:17.764+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:42:17.764+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:42:17.765+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import
+time=2025-12-27T15:42:27.935+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-7hi
+time=2025-12-27T15:42:28.044+02:00 level=INFO msg="Mutation detected: %s %s" status=HFT-du0
+time=2025-12-27T15:42:28.544+02:00 level=INFO msg="Export triggered by mutation events"
+time=2025-12-27T15:42:28.544+02:00 level=INFO msg="Starting %s..." !BADKEY=export
+time=2025-12-27T15:42:28.549+02:00 level=INFO msg="Exported to JSONL"
+time=2025-12-27T15:42:28.549+02:00 level=INFO msg="JSONL removed/renamed, re-establishing watch"
+time=2025-12-27T15:42:28.550+02:00 level=INFO msg="Export complete"
+time=2025-12-27T15:42:28.600+02:00 level=INFO msg="Successfully re-established JSONL watch after %v" !BADKEY=50ms
+time=2025-12-27T15:42:28.600+02:00 level=INFO msg="JSONL file created: %s" !BADKEY=/Users/noviiden/java/projects/happytest/.beads/issues.jsonl
+time=2025-12-27T15:42:29.601+02:00 level=INFO msg="Import triggered by file change"
+time=2025-12-27T15:42:29.601+02:00 level=INFO msg="Starting %s..." !BADKEY=auto-import
+time=2025-12-27T15:42:29.602+02:00 level=INFO msg="Skipping %s: JSONL content unchanged" !BADKEY=auto-import

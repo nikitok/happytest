@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: happytest-reader
+  labels:
+    app: happytest-reader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: happytest-reader
+  template:
+    metadata:
+      labels:
+        app: happytest-reader
+    spec:
+      serviceAccountName: happytest-reader
+      containers:
+        - name: reader
+          image: ghcr.io/your-org/happytest/reader:latest
+          imagePullPolicy: Always
+          args:
+            - "--symbol"
+            - "$(SYMBOL)"
+            - "--duration"
+            - "$(DURATION)"
+            - "--interval"
+            - "$(INTERVAL)"
+            - "--depth"
+            - "$(DEPTH)"
+            - "--parquet"
+            - "--s3-bucket"
+            - "$(S3_BUCKET)"
+            - "--s3-prefix"
+            - "$(S3_PREFIX)"
+            - "--s3-region"
+            - "$(AWS_REGION)"
+          envFrom:
+            - configMapRef:
+                name: happytest-reader-config
+            - secretRef:
+                name: happytest-aws-credentials
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: happytest-reader
+  labels:
+    app: happytest-reader
+  # For EKS IRSA, uncomment and configure:
+  # annotations:
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/happytest-s3-writer

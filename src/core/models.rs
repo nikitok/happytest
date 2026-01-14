@@ -13,13 +13,7 @@ pub struct Trade {
 }
 
 impl Trade {
-    pub fn new(
-        time: i64,
-        symbol: String,
-        side: String,
-        price: f64,
-        quantity: f64,
-    ) -> Self {
+    pub fn new(time: i64, symbol: String, side: String, price: f64, quantity: f64) -> Self {
         Self {
             time,
             symbol,
@@ -76,14 +70,14 @@ impl OrderBook {
         if self.bids.is_empty() || self.asks.is_empty() {
             return 0.0;
         }
-        
+
         let bid_vol = self.bids.iter().take(5).map(|(_, v)| v).sum::<f64>();
         let ask_vol = self.asks.iter().take(5).map(|(_, v)| v).sum::<f64>();
-        
+
         if bid_vol + ask_vol == 0.0 {
             return 0.0;
         }
-        
+
         (bid_vol - ask_vol) / (bid_vol + ask_vol)
     }
 

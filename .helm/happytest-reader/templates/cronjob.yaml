@@ -1,0 +1,89 @@
+{{- if .Values.cronjob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "happytest-reader.fullname" . }}
+  labels:
+    {{- include "happytest-reader.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.cronjob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronjob.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "happytest-reader.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "happytest-reader.serviceAccountName" . }}
+          containers:
+            - name: reader
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args:
+                - "--provider"
+                - "$(PROVIDER)"
+                - "--symbol"
+                - "$(SYMBOL)"
+                - "--duration"
+                - "{{ .Values.cronjob.duration }}"
+                - "--interval"
+                - "$(INTERVAL)"
+                - "--depth"
+                - "$(DEPTH)"
+                {{- if .Values.reader.parquet }}
+                - "--parquet"
+                {{- end }}
+                {{- if .Values.reader.jsonl }}
+                - "--jsonl"
+                {{- end }}
+                {{- if and .Values.reader.testnet (eq .Values.reader.provider "bybit") }}
+                - "--testnet"
+                {{- end }}
+                {{- if .Values.s3.enabled }}
+                - "--s3-bucket"
+                - "$(S3_BUCKET)"
+                - "--s3-prefix"
+                - "$(S3_PREFIX)"
+                - "--s3-region"
+                - "$(AWS_REGION)"
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: {{ include "happytest-reader.fullname" . }}
+                {{- if .Values.s3.enabled }}
+                - secretRef:
+                    name: {{ include "happytest-reader.secretName" . }}
+                {{- end }}
+              {{- with .Values.extraEnv }}
+              env:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+          volumes:
+            - name: data
+              emptyDir: {}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

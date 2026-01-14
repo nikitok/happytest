@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "happytest-reader.fullname" . }}
+  labels:
+    {{- include "happytest-reader.labels" . | nindent 4 }}
+data:
+  PROVIDER: {{ .Values.reader.provider | quote }}
+  SYMBOL: {{ .Values.reader.symbol | quote }}
+  INTERVAL: {{ .Values.reader.interval | quote }}
+  DURATION: {{ .Values.reader.duration | quote }}
+  DEPTH: {{ .Values.reader.depth | quote }}
+  S3_BUCKET: {{ .Values.s3.bucket | quote }}
+  S3_PREFIX: {{ .Values.s3.prefix | quote }}
+  AWS_REGION: {{ .Values.s3.region | quote }}
+  RUST_LOG: {{ .Values.logging.level | quote }}
